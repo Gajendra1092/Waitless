@@ -1,0 +1,18 @@
+{
+  "name": "waitless",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev:server": "npm start --prefix server",
+    "dev:client": "npm start --prefix client",
+    "dev": "npm-run-all --parallel dev:server dev:client"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "npm-run-all": "^4.1.5"
+  }
+}
