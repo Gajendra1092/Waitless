@@ -1,37 +1,22 @@
-import React, { useEffect } from 'react';
-import './App.css';
-import { socket } from './socket';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import JoinPage from './pages/JoinPage';
+import QueueStatusPage from './pages/QueueStatusPage';
+import DashboardPage from './pages/DashboardPage';
 
 function App() {
-  useEffect(() => {
-    socket.connect();
-    console.log('Attempting to connect to socket server...');
-
-    function onConnect() {
-      console.log('Socket connected:', socket.id);
-    }
-
-    function onDisconnect() {
-      console.log('Socket disconnected');
-    }
-
-    socket.on('connect', onConnect);
-    socket.on('disconnect', onDisconnect);
-
-    return () => {
-      socket.off('connect', onConnect);
-      socket.off('disconnect', onDisconnect);
-      socket.disconnect();
-    };
-  }, []);
-
   return (
-    <div>
-      <h1>WaitLess</h1>
-      <p>This is the client application. Check the console for socket status.</p>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/join/:queueId" element={<JoinPage />} />
+        <Route path="/status/:customerId" element={<QueueStatusPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/" element={<Navigate to="/dashboard" />} />
+      </Routes>
+    </Router>
   );
 }
 
 export default App;
+
 

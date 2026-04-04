@@ -32,9 +32,13 @@ app.use(cors({
   credentials: true
 }));
 
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
 app.use('/api/queue', queueRoutes);
 app.use('/api/customer', customerRoutes);
-
 
 io.on('connection', (socket) => {
   console.log('client connected:', socket.id);

@@ -34,4 +34,13 @@ router.get('/:queueId', async (req, res) => {
   }
 });
 
+router.get('/:queueId/customers', async (req, res) => {
+  try {
+    const customers = await Customer.find({ queueId: req.params.queueId }).sort({ position: 1 });
+    res.status(200).json(customers);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+});
+
 export default router;
