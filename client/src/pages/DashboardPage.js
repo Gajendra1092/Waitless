@@ -41,7 +41,9 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import InboxIcon from '@mui/icons-material/Inbox';
 import PhoneIcon from '@mui/icons-material/Phone';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
+import QrCode2Icon from '@mui/icons-material/QrCode2';
 import StatCard from '../components/StatCard';
+import QrCodeDialog from '../components/QrCodeDialog';
 
 const drawerWidth = 240;
 
@@ -53,8 +55,13 @@ function DashboardPage(props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [buttonLoading, setButtonLoading] = useState(false);
+  const [qrDialogOpen, setQrDialogOpen] = useState(false);
+
+  const handleQrDialogOpen = () => setQrDialogOpen(true);
+  const handleQrDialogClose = () => setQrDialogOpen(false);
 
   const queueId = process.env.REACT_APP_QUEUE_ID;
+  const joinUrl = `${window.location.origin}/join/${queueId}`;
 
   const fetchData = useCallback(async () => {
     if (!queueId) {
@@ -215,11 +222,22 @@ function DashboardPage(props) {
       <AppBar position="fixed" sx={{ width: { md: `calc(100% - ${drawerWidth}px)` }, ml: { md: `${drawerWidth}px` } }}>
         <Toolbar>
           <IconButton color="inherit" aria-label="open drawer" edge="start" onClick={handleDrawerToggle} sx={{ mr: 2, display: { md: 'none' } }}><MenuIcon /></IconButton>
-          <Typography variant="h6" noWrap component="div">Dashboard</Typography>
+          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+            Dashboard
+          </Typography>
+          <IconButton color="inherit" onClick={handleQrDialogOpen}>
+            <QrCode2Icon />
+          </IconButton>
         </Toolbar>
       </AppBar>
       <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}><Drawer container={container} variant="temporary" open={mobileOpen} onClose={handleDrawerToggle} ModalProps={{ keepMounted: true }} sx={{ display: { xs: 'block', md: 'none' }, '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth } }}>{drawer}</Drawer><Drawer variant="permanent" sx={{ display: { xs: 'none', md: 'block' }, '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth } }} open>{drawer}</Drawer></Box>
       <Box component="main" sx={{ flexGrow: 1, p: 3, width: { md: `calc(100% - ${drawerWidth}px)` } }}><Toolbar />{renderContent()}</Box>
+      <QrCodeDialog
+        open={qrDialogOpen}
+        onClose={handleQrDialogClose}
+        queueName={queue?.name}
+        joinUrl={joinUrl}
+      />
     </Box>
   );
 }
