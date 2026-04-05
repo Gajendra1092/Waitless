@@ -61,7 +61,7 @@ function DashboardPage(props) {
   const handleQrDialogClose = () => setQrDialogOpen(false);
 
   const queueId = process.env.REACT_APP_QUEUE_ID;
-  const joinUrl = `${window.location.origin}/join/${queueId}`;
+  const joinUrl = `${document.location.origin}/join/${queueId}`;
 
   const fetchData = useCallback(async () => {
     if (!queueId) {
