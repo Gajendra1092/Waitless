@@ -40,7 +40,7 @@ function JoinPage() {
     }
     setLoading(true);
     try {
-      const response = await axios.post(`/api/queue/${queueId}/join`, {
+      const response = await axios.post(`/api/customer/${queueId}/join`, {
         name,
         phone,
       });

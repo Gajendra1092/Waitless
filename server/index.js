@@ -25,6 +25,7 @@ const io = new Server(httpServer, {
 
 import queueRoutes from './routes/queue.routes.js';
 import customerRoutes from './routes/customer.routes.js';
+import businessAuthRoutes from './routes/businessAuth.routes.js';
 
 app.use(express.json());
 app.use(cors({
@@ -39,6 +40,7 @@ app.use((req, res, next) => {
 
 app.use('/api/queue', queueRoutes);
 app.use('/api/customer', customerRoutes);
+app.use('/api/business', businessAuthRoutes);
 
 io.on('connection', (socket) => {
   console.log('client connected:', socket.id);
