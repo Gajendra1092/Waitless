@@ -487,7 +487,7 @@ function AuthSection({ demoFill }) {
     if (!loginData.email || !loginData.password) { setError('Please fill in all fields.'); return; }
     setLoading(true);
     try {
-      const res = await axios.post('/api/auth/login', loginData);
+      const res = await axios.post('/api/business/login', loginData);
       localStorage.setItem('token', res.data.token);
       navigate('/dashboard');
     } catch (err) {
@@ -498,10 +498,11 @@ function AuthSection({ demoFill }) {
   const handleSignup = async () => {
     setError('');
     if (!signupData.name || !signupData.email || !signupData.password) { setError('Please fill in required fields.'); return; }
+    if (signupData.password.length < 6) { setError('Password must be at least 6 characters long.'); return; }
     if (signupData.password !== signupData.confirmPassword) { setError('Passwords do not match.'); return; }
     setLoading(true);
     try {
-      const res = await axios.post('/api/auth/signup', {
+      const res = await axios.post('/api/business/signup', {
         name: signupData.name, email: signupData.email,
         password: signupData.password, phone: signupData.phone, address: signupData.address,
       });

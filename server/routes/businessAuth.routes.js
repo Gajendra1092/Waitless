@@ -9,9 +9,11 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'jwt_secret';
 
 // Signup route
-router.post('/signup',verifyToken, async (req, res) => {
+router.post('/signup', async (req, res) => {
   try {
+
     const { name, email, password, phone, address } = req.body;
+
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Name, email, and password are required' });
     }
@@ -20,27 +22,29 @@ router.post('/signup',verifyToken, async (req, res) => {
     if (existingBusiness) {
       return res.status(400).json({ message: 'Business already exists' });
     }
-    
-    const hashedPassword = await bcryptjs.hash(password, 10);
+
     const newBusiness = new Business({
       name, 
       email, 
-      password: hashedPassword, 
+      password, 
       phone, 
       address,
     });
-    
+
     await newBusiness.save();
-    
+
     const token = jwt.sign({ id: newBusiness._id }, JWT_SECRET);
+
     res.status(201).json({ token, business: newBusiness });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    console.log("Error details:", error.message);
+    console.log("Full error:", error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
 // Login route
-router.post('/login',verifyToken, async (req, res) => {
+router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {

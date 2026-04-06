@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 const businessSchema = new mongoose.Schema(
   {
@@ -40,30 +40,28 @@ const businessSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true, // auto adds createdAt and updatedAt
+    timestamps: true,
   }
 );
 
-// hash password before saving
-businessSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+// Hash password before saving
+businessSchema.pre('save', async function () {
+  if (!this.isModified('password')) return;
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
-  next();
 });
 
-// method to compare password at login
+// Compare password at login
 businessSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// never send password in response
+// Never send password in response
 businessSchema.methods.toJSON = function () {
-  const obj = this.toObject();
-  delete obj.password;
+  const { password, ...obj } = this.toObject();
   return obj;
 };
 
 const Business = mongoose.model('Business', businessSchema);
 
-module.exports = Business;
+export default Business;
