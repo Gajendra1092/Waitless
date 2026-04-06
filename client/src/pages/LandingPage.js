@@ -11,7 +11,7 @@ import {
   LockOutlined, BarChartOutlined, ArrowForward, PlayArrow,
   CheckCircleOutline, SkipNext,
 } from '@mui/icons-material';
-import { createTheme, ThemeProvider, alpha } from '@mui/material/styles';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
 const theme = createTheme({
@@ -71,32 +71,35 @@ const theme = createTheme({
 });
 
 // ─── Animated Background ──────────────────────────────────────────────────────
+// FIX 1: position absolute (not fixed) so it's contained in the relative wrapper
+// FIX 2: dot grid instead of line grid — more visible on dark bg
 function AnimatedBg() {
   return (
-    <Box sx={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+    <Box sx={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
       <Box sx={{
         position: 'absolute', inset: 0,
-        backgroundImage: 'linear-gradient(rgba(0,229,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.03) 1px,transparent 1px)',
-        backgroundSize: '40px 40px',
+        backgroundImage: 'radial-gradient(circle, rgba(0,229,255,0.18) 1px, transparent 1px)',
+        backgroundSize: '36px 36px',
+        opacity: 0.55,
       }} />
       <Box sx={{
-        position: 'absolute', width: 500, height: 500, borderRadius: '50%',
-        background: 'radial-gradient(circle,rgba(0,229,255,0.07),transparent 70%)',
-        top: -100, right: -100, filter: 'blur(60px)',
+        position: 'absolute', width: 600, height: 600, borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(0,229,255,0.08) 0%, transparent 65%)',
+        top: -150, right: -150, filter: 'blur(40px)',
         animation: 'orb1 8s ease-in-out infinite',
         '@keyframes orb1': {
           '0%,100%': { transform: 'translate(0,0)' },
-          '50%': { transform: 'translate(-30px,40px)' },
+          '50%': { transform: 'translate(-40px,50px)' },
         },
       }} />
       <Box sx={{
-        position: 'absolute', width: 400, height: 400, borderRadius: '50%',
-        background: 'radial-gradient(circle,rgba(123,97,255,0.07),transparent 70%)',
-        bottom: 100, left: -100, filter: 'blur(60px)',
+        position: 'absolute', width: 500, height: 500, borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(123,97,255,0.08) 0%, transparent 65%)',
+        bottom: 0, left: -150, filter: 'blur(40px)',
         animation: 'orb2 10s ease-in-out infinite',
         '@keyframes orb2': {
           '0%,100%': { transform: 'translate(0,0)' },
-          '50%': { transform: 'translate(40px,-30px)' },
+          '50%': { transform: 'translate(50px,-40px)' },
         },
       }} />
     </Box>
@@ -108,38 +111,39 @@ function Navbar() {
   const scrollTo = (id) => document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
   return (
     <Box component="nav" sx={{
-      position: 'relative', zIndex: 10,
+      position: 'sticky', top: 0, zIndex: 100,
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      px: { xs: 3, md: 5 }, py: 2,
+      px: { xs: 3, md: 6 }, py: 2,
       borderBottom: '1px solid rgba(0,229,255,0.1)',
-      backdropFilter: 'blur(20px)',
-      background: 'rgba(2,10,20,0.7)',
+      backdropFilter: 'blur(24px)',
+      background: 'rgba(2,10,20,0.75)',
     }}>
       <Typography sx={{
         fontFamily: '"Syne",sans-serif', fontSize: 22, fontWeight: 800,
         background: 'linear-gradient(135deg,#00E5FF,#7B61FF)',
         WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+        letterSpacing: '-0.01em',
       }}>
         WaitLess
       </Typography>
-      <Stack direction="row" spacing={3} alignItems="center" sx={{ display: { xs: 'none', md: 'flex' } }}>
-        {['features', 'stack', 'auth'].map((id) => (
+      <Stack direction="row" spacing={4} alignItems="center" sx={{ display: { xs: 'none', md: 'flex' } }}>
+        {[['features', 'Features'], ['stack', 'Tech Stack'], ['auth', 'Get Started']].map(([id, label]) => (
           <Typography key={id} onClick={() => scrollTo(id)} sx={{
-            fontSize: 13, color: 'text.secondary', cursor: 'pointer', textTransform: 'capitalize',
+            fontSize: 14, color: 'text.secondary', cursor: 'pointer',
             '&:hover': { color: 'text.primary' }, transition: 'color 0.2s',
           }}>
-            {id === 'auth' ? 'Get Started' : id.charAt(0).toUpperCase() + id.slice(1)}
+            {label}
           </Typography>
         ))}
-        <Button
-          variant="contained"
-          size="small"
-          onClick={() => scrollTo('auth')}
-          sx={{ px: 2.5, py: 0.8, fontSize: 13 }}
-        >
+        <Button variant="contained" size="small" onClick={() => scrollTo('auth')}
+          sx={{ px: 3, py: 0.9, fontSize: 13, borderRadius: 2 }}>
           Login →
         </Button>
       </Stack>
+      <Button variant="contained" size="small" onClick={() => scrollTo('auth')}
+        sx={{ display: { xs: 'flex', md: 'none' }, fontSize: 12 }}>
+        Login
+      </Button>
     </Box>
   );
 }
@@ -160,7 +164,6 @@ function LivePreviewCard() {
 
   return (
     <Card sx={{ borderRadius: 3, overflow: 'hidden' }}>
-      {/* Fake window titlebar */}
       <Box sx={{
         px: 2, py: 1.2, display: 'flex', alignItems: 'center', gap: 1,
         borderBottom: '1px solid rgba(0,229,255,0.08)',
@@ -175,19 +178,16 @@ function LivePreviewCard() {
       </Box>
 
       <CardContent sx={{ p: 2 }}>
-        {/* Token number */}
-        <Box sx={{ textAlign: 'center', py: 1.5 }}>
+        <Box sx={{ textAlign: 'center', py: 2 }}>
           <Typography sx={{
-            fontFamily: '"Syne",sans-serif', fontSize: 58, fontWeight: 800,
+            fontFamily: '"Syne",sans-serif', fontSize: 64, fontWeight: 800,
             color: 'primary.main', lineHeight: 1,
-            opacity: pulse ? 0.35 : 1, transition: 'opacity 0.5s ease',
+            opacity: pulse ? 0.3 : 1, transition: 'opacity 0.6s ease',
           }}>
             42
           </Typography>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>Currently Serving</Typography>
         </Box>
-
-        {/* Queue rows */}
         <Stack spacing={1} mt={1}>
           {customers.map((c) => (
             <Box key={c.initials} sx={{
@@ -196,7 +196,7 @@ function LivePreviewCard() {
               border: c.serving ? '1px solid rgba(0,255,148,0.2)' : '1px solid transparent',
             }}>
               <Box sx={{
-                width: 30, height: 30, borderRadius: '50%', background: c.bg,
+                width: 32, height: 32, borderRadius: '50%', background: c.bg,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
               }}>
                 <Typography sx={{ fontSize: 11, fontWeight: 600, color: c.color }}>{c.initials}</Typography>
@@ -205,21 +205,16 @@ function LivePreviewCard() {
                 <Typography sx={{ fontSize: 12, fontWeight: 500 }}>{c.name}</Typography>
                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>{c.wait}</Typography>
               </Box>
-              <Chip
-                label={c.serving ? 'Serving' : c.token}
-                size="small"
-                sx={{
-                  fontSize: 10, height: 20,
-                  background: c.serving ? 'rgba(0,255,148,0.1)' : 'rgba(0,229,255,0.1)',
-                  color: c.serving ? '#00FF94' : '#00E5FF',
-                }}
-              />
+              <Chip label={c.serving ? 'Serving' : c.token} size="small" sx={{
+                fontSize: 10, height: 20,
+                background: c.serving ? 'rgba(0,255,148,0.1)' : 'rgba(0,229,255,0.1)',
+                color: c.serving ? '#00FF94' : '#00E5FF',
+              }} />
             </Box>
           ))}
         </Stack>
       </CardContent>
 
-      {/* Actions */}
       <Box sx={{ px: 2, pb: 2, display: 'flex', gap: 1 }}>
         <Button fullWidth variant="contained" size="small"
           startIcon={<CheckCircleOutline sx={{ fontSize: '14px !important' }} />}
@@ -242,34 +237,30 @@ function HeroSection({ onDemoClick }) {
 
   return (
     <Box sx={{
-      position: 'relative', zIndex: 1, minHeight: '90vh',
+      position: 'relative', zIndex: 1,
       display: 'flex', alignItems: 'center',
-      px: { xs: 3, md: 5 }, py: { xs: 6, md: 4 },
-      gap: { xs: 4, md: 8 },
+      minHeight: { md: '92vh' },
+      px: { xs: 3, md: 6 },
+      py: { xs: 8, md: 0 },
+      gap: { xs: 6, md: 10 },
       flexDirection: { xs: 'column', md: 'row' },
     }}>
-      {/* Left */}
-      <Box sx={{ flex: 1, maxWidth: 620 }}>
-        {/* Eyebrow badge */}
+      <Box sx={{ flex: 1, maxWidth: { md: 640 } }}>
         <Box sx={{
           display: 'inline-flex', alignItems: 'center', gap: 1,
-          background: 'rgba(0,229,255,0.07)',
+          background: 'rgba(0,229,255,0.06)',
           border: '1px solid rgba(0,229,255,0.2)',
-          borderRadius: '100px', px: 2, py: 0.7,
-          mb: 3,
-          animation: 'fadeUp 0.6s ease both',
+          borderRadius: '100px', px: 2, py: 0.8, mb: 4,
+          animation: 'fadeUp 0.5s ease both',
           '@keyframes fadeUp': {
-            from: { opacity: 0, transform: 'translateY(20px)' },
+            from: { opacity: 0, transform: 'translateY(16px)' },
             to: { opacity: 1, transform: 'translateY(0)' },
           },
         }}>
           <Box sx={{
             width: 6, height: 6, borderRadius: '50%', background: '#00E5FF',
-            animation: 'pulse 2s ease infinite',
-            '@keyframes pulse': {
-              '0%,100%': { opacity: 1, transform: 'scale(1)' },
-              '50%': { opacity: 0.4, transform: 'scale(0.8)' },
-            },
+            animation: 'blink 2s ease infinite',
+            '@keyframes blink': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.3 } },
           }} />
           <Typography sx={{ fontSize: 12, color: 'primary.main', letterSpacing: '0.05em' }}>
             Real-time Queue Management
@@ -277,13 +268,14 @@ function HeroSection({ onDemoClick }) {
         </Box>
 
         <Typography variant="h1" sx={{
-          fontSize: { xs: 42, md: 64 }, lineHeight: 1.05, letterSpacing: '-0.02em', mb: 3,
-          animation: 'fadeUp 0.6s 0.1s ease both',
+          fontSize: { xs: 44, sm: 56, md: 70 },
+          lineHeight: 1.02, letterSpacing: '-0.025em', mb: 3,
+          animation: 'fadeUp 0.5s 0.1s ease both',
         }}>
-          Stop the Wait.{' '}
+          Stop the Wait.
           <Box component="span" sx={{
             display: 'block',
-            background: 'linear-gradient(135deg,#00E5FF,#7B61FF)',
+            background: 'linear-gradient(135deg,#00E5FF 30%,#7B61FF)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
           }}>
             Start the Flow.
@@ -291,52 +283,47 @@ function HeroSection({ onDemoClick }) {
         </Typography>
 
         <Typography sx={{
-          fontSize: 17, color: 'text.secondary', lineHeight: 1.7, maxWidth: 480, mb: 4,
-          animation: 'fadeUp 0.6s 0.2s ease both',
+          fontSize: { xs: 15, md: 17 }, color: 'text.secondary',
+          lineHeight: 1.75, maxWidth: 500, mb: 5,
+          animation: 'fadeUp 0.5s 0.2s ease both',
         }}>
           WaitLess gives businesses a smarter way to manage customer queues in real time —
-          with live updates, token assignment, and zero confusion.
+          with live socket updates, token assignment, and zero confusion.
         </Typography>
 
-        <Stack direction="row" spacing={2} flexWrap="wrap" sx={{ animation: 'fadeUp 0.6s 0.3s ease both' }}>
-          <Button
-            variant="contained"
-            size="large"
-            endIcon={<ArrowForward />}
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}
+          sx={{ animation: 'fadeUp 0.5s 0.3s ease both' }}>
+          <Button variant="contained" size="large" endIcon={<ArrowForward />}
             onClick={() => scrollTo('auth')}
-            sx={{ px: 3.5, py: 1.4 }}
-          >
+            sx={{ px: 4, py: 1.5, fontSize: 15, borderRadius: 2 }}>
             Get Started Free
           </Button>
-          <Button
-            variant="outlined"
-            size="large"
-            startIcon={<PlayArrow />}
+          <Button variant="outlined" size="large" startIcon={<PlayArrow />}
             onClick={onDemoClick}
-            sx={{ px: 3.5, py: 1.4, borderColor: 'rgba(0,229,255,0.2)', color: 'text.primary' }}
-          >
+            sx={{ px: 4, py: 1.5, fontSize: 15, borderRadius: 2, borderColor: 'rgba(0,229,255,0.25)', color: 'text.primary' }}>
             Watch Demo
           </Button>
         </Stack>
 
-        {/* Stats */}
-        <Stack direction="row" spacing={4} mt={5} pt={4} sx={{
-          borderTop: '1px solid rgba(0,229,255,0.1)',
-          animation: 'fadeUp 0.6s 0.4s ease both',
-        }}>
+        <Stack direction="row" spacing={5} mt={6} pt={5}
+          sx={{ borderTop: '1px solid rgba(0,229,255,0.1)', animation: 'fadeUp 0.5s 0.4s ease both' }}>
           {[['10x', 'Faster flow'], ['0', 'Physical tokens'], ['Live', 'Socket updates']].map(([val, label]) => (
-            <Box key={label} sx={{ textAlign: 'center' }}>
-              <Typography sx={{ fontFamily: '"Syne",sans-serif', fontSize: 26, fontWeight: 700, color: 'primary.main' }}>
+            <Box key={label}>
+              <Typography sx={{
+                fontFamily: '"Syne",sans-serif',
+                fontSize: { xs: 24, md: 30 }, fontWeight: 700, color: 'primary.main', lineHeight: 1,
+              }}>
                 {val}
               </Typography>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>{label}</Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, display: 'block' }}>
+                {label}
+              </Typography>
             </Box>
           ))}
         </Stack>
       </Box>
 
-      {/* Right — preview card */}
-      <Box sx={{ flex: '0 0 auto', width: { xs: '100%', md: 360 } }}>
+      <Box sx={{ flex: '0 0 auto', width: { xs: '100%', md: 400 }, display: { xs: 'none', md: 'block' } }}>
         <LivePreviewCard />
       </Box>
     </Box>
@@ -363,44 +350,45 @@ function FeaturesSection() {
   return (
     <Box id="features" sx={{
       position: 'relative', zIndex: 1,
-      px: { xs: 3, md: 5 }, py: 10,
-      background: 'rgba(6,18,32,0.6)',
-      borderTop: '1px solid rgba(0,229,255,0.06)',
+      px: { xs: 3, md: 6 }, py: { xs: 8, md: 12 },
+      background: 'rgba(6,18,32,0.7)',
+      borderTop: '1px solid rgba(0,229,255,0.07)',
     }}>
-      <Typography sx={{ fontSize: 12, color: 'primary.main', letterSpacing: '0.1em', textTransform: 'uppercase', mb: 1 }}>
+      <Typography sx={{ fontSize: 12, color: 'primary.main', letterSpacing: '0.12em', textTransform: 'uppercase', mb: 1.5 }}>
         Why WaitLess
       </Typography>
-      <Typography variant="h3" sx={{ fontSize: { xs: 28, md: 40 }, mb: 2 }}>
+      <Typography variant="h3" sx={{ fontSize: { xs: 28, md: 42 }, mb: 2 }}>
         Everything your queue needs
       </Typography>
-      <Typography sx={{ color: 'text.secondary', fontSize: 16, maxWidth: 500, lineHeight: 1.7, mb: 6 }}>
+      <Typography sx={{ color: 'text.secondary', fontSize: { xs: 14, md: 16 }, maxWidth: 520, lineHeight: 1.75, mb: 7 }}>
         Built for clinics, salons, banks, and any business that handles walk-in customers.
       </Typography>
 
-      <Grid container spacing={2.5}>
+      {/* FIX: MUI v7 — size prop, no item prop */}
+      <Grid container spacing={3}>
         {featureList.map((f) => {
           const IconComp = f.icon;
           const c = colorMap[f.colorKey];
           return (
-            <Grid item xs={12} sm={6} md={4} key={f.title}>
+            <Grid key={f.title} size={{ xs: 12, sm: 6, md: 4 }}>
               <Card sx={{
-                p: 3, height: '100%', cursor: 'default',
-                transition: 'all 0.3s',
+                p: 3.5, height: '100%', cursor: 'default',
+                transition: 'all 0.25s ease',
                 '&:hover': {
                   border: '1px solid rgba(0,229,255,0.3)',
-                  transform: 'translateY(-4px)',
+                  transform: 'translateY(-5px)',
                   background: '#0C1F33',
                 },
               }}>
                 <Box sx={{
-                  width: 44, height: 44, borderRadius: 2,
+                  width: 46, height: 46, borderRadius: 2.5,
                   background: c.bg, display: 'flex', alignItems: 'center',
-                  justifyContent: 'center', mb: 2,
+                  justifyContent: 'center', mb: 2.5,
                 }}>
-                  <IconComp sx={{ color: c.color, fontSize: 22 }} />
+                  <IconComp sx={{ color: c.color, fontSize: 23 }} />
                 </Box>
-                <Typography variant="h6" sx={{ fontSize: 15, mb: 1 }}>{f.title}</Typography>
-                <Typography sx={{ color: 'text.secondary', fontSize: 14, lineHeight: 1.6 }}>{f.desc}</Typography>
+                <Typography variant="h6" sx={{ fontSize: 15, mb: 1.2 }}>{f.title}</Typography>
+                <Typography sx={{ color: 'text.secondary', fontSize: 14, lineHeight: 1.65 }}>{f.desc}</Typography>
               </Card>
             </Grid>
           );
@@ -426,19 +414,18 @@ function TechSection() {
   return (
     <Box id="stack" sx={{
       position: 'relative', zIndex: 1,
-      px: { xs: 3, md: 5 }, py: 10,
-      borderTop: '1px solid rgba(0,229,255,0.06)',
+      px: { xs: 3, md: 6 }, py: { xs: 8, md: 12 },
+      borderTop: '1px solid rgba(0,229,255,0.07)',
     }}>
-      <Typography sx={{ fontSize: 12, color: 'primary.main', letterSpacing: '0.1em', textTransform: 'uppercase', mb: 1 }}>
+      <Typography sx={{ fontSize: 12, color: 'primary.main', letterSpacing: '0.12em', textTransform: 'uppercase', mb: 1.5 }}>
         Built With
       </Typography>
-      <Typography variant="h3" sx={{ fontSize: { xs: 28, md: 40 }, mb: 2 }}>
+      <Typography variant="h3" sx={{ fontSize: { xs: 28, md: 42 }, mb: 2 }}>
         Modern Tech Stack
       </Typography>
-      <Typography sx={{ color: 'text.secondary', fontSize: 16, mb: 5, lineHeight: 1.7 }}>
+      <Typography sx={{ color: 'text.secondary', fontSize: { xs: 14, md: 16 }, mb: 6, lineHeight: 1.75 }}>
         100% JavaScript — from database to UI. No TypeScript, no unnecessary complexity.
       </Typography>
-
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
         {techStack.map((t) => (
           <Paper key={t.name} elevation={0} sx={{
@@ -446,12 +433,12 @@ function TechSection() {
             px: 2.5, py: 1.5,
             background: '#061220',
             border: '1px solid rgba(0,229,255,0.1)',
-            borderRadius: 2,
+            borderRadius: 2.5,
             cursor: 'default',
-            transition: 'all 0.2s',
-            '&:hover': { borderColor: 'primary.main', transform: 'translateY(-2px)' },
+            transition: 'all 0.2s ease',
+            '&:hover': { borderColor: '#00E5FF', transform: 'translateY(-3px)', background: '#0C1F33' },
           }}>
-            <Typography sx={{ fontSize: 20 }}>{t.emoji}</Typography>
+            <Typography sx={{ fontSize: 22 }}>{t.emoji}</Typography>
             <Box>
               <Typography sx={{ fontSize: 13, fontWeight: 500 }}>{t.name}</Typography>
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>{t.role}</Typography>
@@ -474,7 +461,6 @@ function AuthSection({ demoFill }) {
     name: '', email: '', password: '', confirmPassword: '', phone: '', address: '',
   });
 
-  // triggered by Demo button from parent
   useEffect(() => {
     if (demoFill) {
       setTab(0);
@@ -498,7 +484,7 @@ function AuthSection({ demoFill }) {
   const handleSignup = async () => {
     setError('');
     if (!signupData.name || !signupData.email || !signupData.password) { setError('Please fill in required fields.'); return; }
-    if (signupData.password.length < 6) { setError('Password must be at least 6 characters long.'); return; }
+    if (signupData.password.length < 6) { setError('Password must be at least 6 characters.'); return; }
     if (signupData.password !== signupData.confirmPassword) { setError('Passwords do not match.'); return; }
     setLoading(true);
     try {
@@ -523,26 +509,26 @@ function AuthSection({ demoFill }) {
   return (
     <Box id="auth" sx={{
       position: 'relative', zIndex: 1,
-      px: { xs: 3, md: 5 }, py: 10,
-      background: 'rgba(6,18,32,0.6)',
-      borderTop: '1px solid rgba(0,229,255,0.06)',
+      px: { xs: 3, md: 6 }, py: { xs: 8, md: 12 },
+      background: 'rgba(6,18,32,0.7)',
+      borderTop: '1px solid rgba(0,229,255,0.07)',
     }}>
-      <Typography sx={{ fontSize: 12, color: 'primary.main', letterSpacing: '0.1em', textTransform: 'uppercase', mb: 1 }}>
+      <Typography sx={{ fontSize: 12, color: 'primary.main', letterSpacing: '0.12em', textTransform: 'uppercase', mb: 1.5 }}>
         Get Started
       </Typography>
-      <Typography variant="h3" sx={{ fontSize: { xs: 28, md: 40 }, mb: 6 }}>
+      <Typography variant="h3" sx={{ fontSize: { xs: 28, md: 42 }, mb: 7 }}>
         Your queue, your rules
       </Typography>
 
-      <Grid container spacing={6} alignItems="flex-start">
-        {/* Left — info */}
-        <Grid item xs={12} md={5}>
-          <Stack spacing={3}>
+      {/* FIX: MUI v7 Grid — size prop, no item prop */}
+      <Grid container spacing={{ xs: 4, md: 8 }} sx={{ alignItems: 'flex-start' }}>
+        <Grid size={{ xs: 12, md: 5 }}>
+          <Stack spacing={3.5}>
             {infoItems.map((item) => (
               <Box key={item.title} sx={{ display: 'flex', gap: 2 }}>
                 <Box sx={{
-                  width: 38, height: 38, borderRadius: 2, flexShrink: 0,
-                  background: 'rgba(0,229,255,0.07)',
+                  width: 40, height: 40, borderRadius: 2, flexShrink: 0,
+                  background: 'rgba(0,229,255,0.06)',
                   border: '1px solid rgba(0,229,255,0.15)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 18,
@@ -551,170 +537,130 @@ function AuthSection({ demoFill }) {
                 </Box>
                 <Box>
                   <Typography sx={{ fontSize: 14, fontWeight: 500, mb: 0.5 }}>{item.title}</Typography>
-                  <Typography sx={{ fontSize: 13, color: 'text.secondary', lineHeight: 1.6 }}>{item.desc}</Typography>
+                  <Typography sx={{ fontSize: 13, color: 'text.secondary', lineHeight: 1.65 }}>{item.desc}</Typography>
                 </Box>
               </Box>
             ))}
           </Stack>
         </Grid>
 
-        {/* Right — form */}
-        <Grid item xs={12} md={7}>
+        <Grid size={{ xs: 12, md: 7 }}>
           <Card sx={{ borderRadius: 3 }}>
-            {/* Tabs */}
             <Box sx={{ borderBottom: '1px solid rgba(0,229,255,0.08)' }}>
-              <Tabs
-                value={tab}
-                onChange={(_, v) => { setTab(v); setError(''); }}
+              <Tabs value={tab} onChange={(_, v) => { setTab(v); setError(''); }}
                 TabIndicatorProps={{ style: { background: '#00E5FF' } }}
-                sx={{ px: 2, pt: 1 }}
-              >
+                sx={{ px: 2, pt: 1 }}>
                 <Tab label="Login" />
                 <Tab label="Sign Up" />
               </Tabs>
             </Box>
 
-            <CardContent sx={{ p: 3 }}>
-              {error && (
-                <Alert severity="error" sx={{ mb: 2.5, fontSize: 13 }}>{error}</Alert>
-              )}
+            <CardContent sx={{ p: { xs: 2.5, md: 3.5 } }}>
+              {error && <Alert severity="error" sx={{ mb: 2.5, fontSize: 13 }}>{error}</Alert>}
 
-              {/* LOGIN PANEL */}
               {tab === 0 && (
                 <Stack spacing={2.5}>
-                  <TextField
-                    label="Business Email"
-                    type="email"
-                    fullWidth
+                  <TextField label="Business Email" type="email" fullWidth size="small"
                     value={loginData.email}
                     onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
                     placeholder="clinic@example.com"
-                    size="small"
                   />
-                  <TextField
-                    label="Password"
-                    type="password"
-                    fullWidth
+                  <TextField label="Password" type="password" fullWidth size="small"
                     value={loginData.password}
                     onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                     placeholder="••••••••"
-                    size="small"
                     onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                   />
-                  <LoadingButton
-                    fullWidth variant="contained" size="large"
+                  <LoadingButton fullWidth variant="contained" size="large"
                     loading={loading} onClick={handleLogin}
-                    sx={{ py: 1.3, mt: 0.5 }}
-                  >
+                    sx={{ py: 1.4, mt: 0.5, borderRadius: 2 }}>
                     Login to Dashboard →
                   </LoadingButton>
-
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Box sx={{ flex: 1, height: '1px', background: 'rgba(0,229,255,0.1)' }} />
                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>or</Typography>
                     <Box sx={{ flex: 1, height: '1px', background: 'rgba(0,229,255,0.1)' }} />
                   </Box>
-
-                  <Button
-                    fullWidth variant="outlined" size="large"
-                    startIcon={<PlayArrow />}
+                  <Button fullWidth variant="outlined" size="large" startIcon={<PlayArrow />}
                     onClick={() => setLoginData({ email: 'demo@waitless.app', password: 'demo1234' })}
-                    sx={{ py: 1.2, borderColor: 'rgba(123,97,255,0.3)', color: '#7B61FF',
-                      '&:hover': { borderColor: '#7B61FF', background: 'rgba(123,97,255,0.06)' } }}
-                  >
+                    sx={{ py: 1.3, borderRadius: 2, borderColor: 'rgba(123,97,255,0.3)', color: '#7B61FF',
+                      '&:hover': { borderColor: '#7B61FF', background: 'rgba(123,97,255,0.06)' } }}>
                     Try Demo Account
                   </Button>
-
                   <Typography variant="caption" sx={{ textAlign: 'center', color: 'text.secondary' }}>
                     No account?{' '}
                     <Box component="span" onClick={() => setTab(1)}
-                      sx={{ color: 'primary.main', cursor: 'pointer' }}>
+                      sx={{ color: 'primary.main', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
                       Sign up free
                     </Box>
                   </Typography>
                 </Stack>
               )}
 
-              {/* SIGNUP PANEL */}
               {tab === 1 && (
                 <Stack spacing={2.5}>
                   <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="Business Name" fullWidth size="small"
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField label="Business Name" fullWidth size="small"
                         value={signupData.name}
                         onChange={(e) => setSignupData({ ...signupData, name: e.target.value })}
                         placeholder="City Clinic"
                       />
                     </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="Phone" fullWidth size="small"
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField label="Phone" fullWidth size="small"
                         value={signupData.phone}
                         onChange={(e) => setSignupData({ ...signupData, phone: e.target.value })}
                         placeholder="9876543210"
                       />
                     </Grid>
                   </Grid>
-                  <TextField
-                    label="Business Email" type="email" fullWidth size="small"
+                  <TextField label="Business Email" type="email" fullWidth size="small"
                     value={signupData.email}
                     onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
                     placeholder="you@business.com"
                   />
-                  <TextField
-                    label="Address" fullWidth size="small"
+                  <TextField label="Address" fullWidth size="small"
                     value={signupData.address}
                     onChange={(e) => setSignupData({ ...signupData, address: e.target.value })}
                     placeholder="123 MG Road, Jaipur"
                   />
                   <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="Password" type="password" fullWidth size="small"
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField label="Password" type="password" fullWidth size="small"
                         value={signupData.password}
                         onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
                         placeholder="••••••••"
                       />
                     </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="Confirm Password" type="password" fullWidth size="small"
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField label="Confirm Password" type="password" fullWidth size="small"
                         value={signupData.confirmPassword}
                         onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
                         placeholder="••••••••"
                       />
                     </Grid>
                   </Grid>
-
-                  <LoadingButton
-                    fullWidth variant="contained" size="large"
+                  <LoadingButton fullWidth variant="contained" size="large"
                     loading={loading} onClick={handleSignup}
-                    sx={{ py: 1.3, mt: 0.5 }}
-                  >
+                    sx={{ py: 1.4, mt: 0.5, borderRadius: 2 }}>
                     Create Business Account →
                   </LoadingButton>
-
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Box sx={{ flex: 1, height: '1px', background: 'rgba(0,229,255,0.1)' }} />
                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>or</Typography>
                     <Box sx={{ flex: 1, height: '1px', background: 'rgba(0,229,255,0.1)' }} />
                   </Box>
-
-                  <Button
-                    fullWidth variant="outlined" size="large"
-                    startIcon={<PlayArrow />}
+                  <Button fullWidth variant="outlined" size="large" startIcon={<PlayArrow />}
                     onClick={() => { setTab(0); setLoginData({ email: 'demo@waitless.app', password: 'demo1234' }); }}
-                    sx={{ py: 1.2, borderColor: 'rgba(123,97,255,0.3)', color: '#7B61FF',
-                      '&:hover': { borderColor: '#7B61FF', background: 'rgba(123,97,255,0.06)' } }}
-                  >
+                    sx={{ py: 1.3, borderRadius: 2, borderColor: 'rgba(123,97,255,0.3)', color: '#7B61FF',
+                      '&:hover': { borderColor: '#7B61FF', background: 'rgba(123,97,255,0.06)' } }}>
                     Try Demo Account
                   </Button>
-
                   <Typography variant="caption" sx={{ textAlign: 'center', color: 'text.secondary' }}>
                     Already registered?{' '}
                     <Box component="span" onClick={() => setTab(0)}
-                      sx={{ color: 'primary.main', cursor: 'pointer' }}>
+                      sx={{ color: 'primary.main', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
                       Login here
                     </Box>
                   </Typography>
@@ -733,7 +679,7 @@ function Footer() {
   return (
     <Box component="footer" sx={{
       position: 'relative', zIndex: 1,
-      px: { xs: 3, md: 5 }, py: 3,
+      px: { xs: 3, md: 6 }, py: 3.5,
       borderTop: '1px solid rgba(0,229,255,0.08)',
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       flexWrap: 'wrap', gap: 1,
@@ -754,15 +700,15 @@ export default function LandingPage() {
 
   const triggerDemo = () => {
     document.getElementById('auth').scrollIntoView({ behavior: 'smooth' });
-    setTimeout(() => setDemoFill(v => !v), 600); // toggle to re-trigger useEffect
+    setTimeout(() => setDemoFill(v => !v), 600);
   };
 
   return (
     <ThemeProvider theme={theme}>
-      {/* Google Fonts */}
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');`}</style>
 
-      <Box sx={{ background: 'background.default', minHeight: '100vh', overflowX: 'hidden' }}>
+      {/* FIX: position relative here so AnimatedBg (absolute) stays contained */}
+      <Box sx={{ position: 'relative', background: '#020A14', minHeight: '100vh', overflowX: 'hidden' }}>
         <AnimatedBg />
         <Navbar />
         <HeroSection onDemoClick={triggerDemo} />
