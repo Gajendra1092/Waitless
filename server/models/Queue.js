@@ -14,7 +14,7 @@ const queueSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['running', 'No customer', 'paused', 'ended'],
+    enum: ['running', 'no customers', 'paused', 'ended'],
     default: 'running',
   },
   // i can get this by ai / name

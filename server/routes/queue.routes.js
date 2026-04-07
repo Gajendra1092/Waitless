@@ -122,7 +122,7 @@ router.patch('/pause/:queueId', verifyToken, async (req, res) => {
     if (queue.status === 'paused') {
       // Resume logic: check waiting customers to decide if 'running' or 'No customer'
       const customersCount = await Customer.countDocuments({ queueId: queue._id, status: 'waiting' });
-      queue.status = customersCount > 0 ? 'running' : 'No customer';
+      queue.status = customersCount > 0 ? 'running' : 'no customers';
     } else {
       queue.status = 'paused';
     }

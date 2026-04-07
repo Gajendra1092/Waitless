@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import JoinPage from './pages/JoinPage';
 import QueueStatusPage from './pages/QueueStatusPage';
 import DashboardPage from './pages/DashboardPage';
+import QueueDetailsPage from './pages/QueueDetailsPage';
 import DisplayPage from './pages/DisplayPage';
 import LandingPage from './pages/LandingPage';
 import axios from 'axios';
@@ -16,6 +17,7 @@ function App() {
         <Route path="/join/:queueId" element={<JoinPage />} />
         <Route path="/status/:customerId" element={<QueueStatusPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/dashboard/queue/:queueId" element={<QueueDetailsPage />} />
         <Route path="/display/:queueId" element={<DisplayPage />} />
         <Route path="/" element={<LandingPage />} />
       </Routes>
@@ -24,5 +26,3 @@ function App() {
 }
 
 export default App;
-
-
