@@ -1,755 +1,1115 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { io } from 'socket.io-client';
+// App.js
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
 import {
-  Box, Typography, Button, TextField, InputAdornment,
-  Select, MenuItem, FormControl, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, Chip, IconButton,
-  Avatar, Tooltip, Pagination, Dialog, DialogTitle,
-  DialogContent, DialogContentText, DialogActions, Divider,
-  CircularProgress, Alert, Stack,
-} from '@mui/material';
+  Box,
+  CssBaseline,
+  ThemeProvider,
+  createTheme,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Typography,
+  Avatar,
+  IconButton,
+  TextField,
+  InputAdornment,
+  Select,
+  MenuItem,
+  FormControl,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+  Pagination,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Tooltip,
+  Divider,
+  useMediaQuery,
+  AppBar,
+  Toolbar,
+  Skeleton,
+  Snackbar,
+  Alert,
+  CircularProgress,
+} from "@mui/material";
 import {
-  SearchOutlined, QueueOutlined, BarChartOutlined, SettingsOutlined,
-  AddOutlined, PauseCircleOutlined, PlayCircleOutlined, DeleteOutlined,
-  LogoutOutlined, PeopleAltOutlined, FiberManualRecord,
-} from '@mui/icons-material';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
+  Search as SearchIcon,
+  QueuePlayNext as QueueIcon,
+  Analytics as AnalyticsIcon,
+  Settings as SettingsIcon,
+  Logout as LogoutIcon,
+  Pause as PauseIcon,
+  Delete as DeleteIcon,
+  PlayArrow as PlayArrowIcon,
+  Menu as MenuIcon,
+  Add as AddIcon,
+  ChevronLeft as ChevronLeftIcon,
+  Close as CloseIcon,
+} from "@mui/icons-material";
 
-// ─── Theme (same as LandingPage) ─────────────────────────────────────────────
-const theme = createTheme({
+// ========================
+// THEME
+// ========================
+const darkTheme = createTheme({
   palette: {
-    mode: 'dark',
-    primary: { main: '#00E5FF', contrastText: '#000' },
-    secondary: { main: '#7B61FF' },
-    success: { main: '#00FF94' },
-    warning: { main: '#FFB800' },
-    error: { main: '#FF4D6A' },
-    background: { default: '#020A14', paper: '#061220' },
-    text: { primary: '#F0F6FF', secondary: '#5A7A9A' },
+    mode: "dark",
+    background: {
+      default: "#111118",
+      paper: "#16161e",
+    },
+    primary: {
+      main: "#ffffff",
+    },
+    secondary: {
+      main: "#8a8a8a",
+    },
+    divider: "#2a2a35",
+    text: {
+      primary: "#e0e0e0",
+      secondary: "#8a8a8a",
+    },
   },
   typography: {
-    fontFamily: '"DM Sans", sans-serif',
-    h1: { fontFamily: '"Syne", sans-serif', fontWeight: 800 },
-    h2: { fontFamily: '"Syne", sans-serif', fontWeight: 700 },
-    h3: { fontFamily: '"Syne", sans-serif', fontWeight: 700 },
-    h4: { fontFamily: '"Syne", sans-serif', fontWeight: 700 },
-    h5: { fontFamily: '"Syne", sans-serif', fontWeight: 600 },
-    h6: { fontFamily: '"Syne", sans-serif', fontWeight: 600 },
+    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    fontSize: 13,
   },
-  shape: { borderRadius: 10 },
   components: {
-    MuiButton: {
+    MuiCssBaseline: {
       styleOverrides: {
-        root: { textTransform: 'none', fontWeight: 500 },
+        body: {
+          backgroundColor: "#111118",
+          scrollbarWidth: "thin",
+          scrollbarColor: "#2a2a35 #111118",
+        },
+        "*::-webkit-scrollbar": { width: "6px" },
+        "*::-webkit-scrollbar-track": { background: "#111118" },
+        "*::-webkit-scrollbar-thumb": {
+          background: "#2a2a35",
+          borderRadius: "3px",
+        },
+      },
+    },
+    MuiDrawer: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: "#16161e",
+          borderRight: "1px solid #2a2a35",
+        },
       },
     },
     MuiTableCell: {
       styleOverrides: {
-        root: {
-          borderBottom: '1px solid rgba(0,229,255,0.06)',
-          padding: '14px 16px',
-        },
+        root: { borderBottom: "1px solid #2a2a35", padding: "12px 16px" },
         head: {
-          background: '#0C1F33',
-          color: '#5A7A9A',
-          fontSize: 12,
           fontWeight: 600,
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
+          color: "#8a8a8a",
+          fontSize: "0.75rem",
+          textTransform: "uppercase",
+          letterSpacing: "0.05em",
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: { root: { backgroundImage: "none" } },
+    },
+    MuiButton: {
+      styleOverrides: { root: { textTransform: "none", borderRadius: "8px" } },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          borderRadius: "8px",
+          "& .MuiOutlinedInput-notchedOutline": { borderColor: "#2a2a35" },
+          "&:hover .MuiOutlinedInput-notchedOutline": {
+            borderColor: "#3a3a45",
+          },
+          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+            borderColor: "#5a5a65",
+          },
         },
       },
     },
     MuiSelect: {
+      styleOverrides: { root: { borderRadius: "8px" } },
+    },
+    MuiChip: {
       styleOverrides: {
-        root: {
-          background: '#0C1F33',
-          '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,229,255,0.12)' },
-          '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,229,255,0.3)' },
-          '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#00E5FF' },
-        },
+        root: { borderRadius: "6px", fontWeight: 500, fontSize: "0.75rem" },
       },
     },
-    MuiTextField: {
+    MuiPaginationItem: {
       styleOverrides: {
         root: {
-          '& .MuiOutlinedInput-root': {
-            background: '#0C1F33',
-            '& fieldset': { borderColor: 'rgba(0,229,255,0.12)' },
-            '&:hover fieldset': { borderColor: 'rgba(0,229,255,0.3)' },
-            '&.Mui-focused fieldset': { borderColor: '#00E5FF' },
-          },
+          color: "#8a8a8a",
+          "&.Mui-selected": { backgroundColor: "#2a2a35", color: "#ffffff" },
         },
-      },
-    },
-    MuiPagination: {
-      styleOverrides: {
-        root: {
-          '& .MuiPaginationItem-root': {
-            color: '#5A7A9A',
-            borderColor: 'rgba(0,229,255,0.12)',
-            '&.Mui-selected': { background: '#00E5FF', color: '#000', borderColor: '#00E5FF' },
-            '&:hover': { background: 'rgba(0,229,255,0.08)' },
-          },
-        },
-      },
-    },
-    MuiDialog: {
-      styleOverrides: {
-        paper: { background: '#061220', border: '1px solid rgba(0,229,255,0.12)', backgroundImage: 'none' },
       },
     },
   },
 });
 
-// ─── Status helpers ───────────────────────────────────────────────────────────
-const ROWS_PER_PAGE = 5;
+const DRAWER_WIDTH = 240;
 
-function deriveStatus(queue) {
-  if (queue.isPaused) return 'paused';
-  if (queue.isEnded) return 'ended';
-  if ((queue.waitingCount ?? 0) > 0) return 'running';
-  return 'no_customers';
-}
+// Add interceptors to attach auth tokens to every request
+axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers = config.headers || {};
+    config.headers["Authorization"] = `Bearer ${token}`;
+  }
+  return config;
+});
 
-const statusConfig = {
-  running: { label: 'Running', color: '#00FF94', bg: 'rgba(0,255,148,0.1)' },
-  no_customers: { label: 'No Customers', color: '#5A7A9A', bg: 'rgba(90,122,154,0.1)' },
-  paused: { label: 'Paused', color: '#FFB800', bg: 'rgba(255,184,0,0.1)' },
-  ended: { label: 'Ended', color: '#FF4D6A', bg: 'rgba(255,77,106,0.1)' },
+const WS_URL = "ws://localhost:8080/queue-updates";
+
+// ========================
+// STATUS HELPERS
+// ========================
+const getStatusFromCount = (count, currentStatus) => {
+  if (currentStatus === "paused") return "paused";
+  if (currentStatus === "ended") return "ended";
+  if (count > 0) return "running";
+  return "no customers";
 };
 
-function StatusChip({ status }) {
-  const cfg = statusConfig[status] || statusConfig.no_customers;
+const getStatusChip = (status) => {
+  const config = {
+    running: { color: "#22c55e", bg: "#22c55e20", label: "Running" },
+    "no customers": {
+      color: "#f59e0b",
+      bg: "#f59e0b20",
+      label: "No Customers",
+    },
+    paused: { color: "#8a8a8a", bg: "#8a8a8a20", label: "Paused" },
+    ended: { color: "#ef4444", bg: "#ef444420", label: "Ended" },
+  };
+  const c = config[status] || config["no customers"];
   return (
-    <Box sx={{
-      display: 'inline-flex', alignItems: 'center', gap: 0.7,
-      px: 1.2, py: 0.4, borderRadius: '100px',
-      background: cfg.bg, border: `1px solid ${cfg.color}22`,
-    }}>
-      <FiberManualRecord sx={{ fontSize: 8, color: cfg.color }} />
-      <Typography sx={{ fontSize: 12, fontWeight: 500, color: cfg.color }}>{cfg.label}</Typography>
-    </Box>
+    <Chip
+      label={c.label}
+      size="small"
+      sx={{
+        color: c.color,
+        backgroundColor: c.bg,
+        border: `1px solid ${c.color}30`,
+        fontWeight: 500,
+      }}
+    />
   );
-}
+};
 
-// ─── Sidebar Nav Item ─────────────────────────────────────────────────────────
-function NavItem({ icon, label, active, onClick }) {
-  return (
-    <Box onClick={onClick} sx={{
-      display: 'flex', alignItems: 'center', gap: 1.5,
-      px: 2, py: 1.4, borderRadius: 2, cursor: 'pointer',
-      background: active ? 'rgba(0,229,255,0.08)' : 'transparent',
-      borderLeft: active ? '3px solid #00E5FF' : '3px solid transparent',
-      transition: 'all 0.18s ease',
-      '&:hover': { background: 'rgba(0,229,255,0.05)' },
-    }}>
-      <Box sx={{ color: active ? 'primary.main' : 'text.secondary', display: 'flex' }}>{icon}</Box>
-      <Typography sx={{
-        fontSize: 14, fontWeight: active ? 600 : 400,
-        color: active ? 'text.primary' : 'text.secondary',
-      }}>
-        {label}
-      </Typography>
-    </Box>
-  );
-}
+// ========================
+// MOCK DATA (Remove when API is ready)
+// ========================
+const MOCK_QUEUES = [
+  { id: 1, name: "General Queue", status: "running", customers: 12, category: "General" },
+  { id: 2, name: "VIP Lounge", status: "running", customers: 5, category: "VIP" },
+  { id: 3, name: "Support Desk", status: "no customers", customers: 0, category: "Support" },
+  { id: 4, name: "Checkout Lane 1", status: "running", customers: 8, category: "General" },
+  { id: 5, name: "Checkout Lane 2", status: "paused", customers: 3, category: "General" },
+  { id: 6, name: "Returns Counter", status: "ended", customers: 0, category: "Support" },
+  { id: 7, name: "Priority Service", status: "running", customers: 2, category: "VIP" },
+  { id: 8, name: "Walk-in Queue", status: "running", customers: 15, category: "General" },
+  { id: 9, name: "Appointment Queue", status: "no customers", customers: 0, category: "Support" },
+  { id: 10, name: "Express Lane", status: "running", customers: 4, category: "VIP" },
+  { id: 11, name: "Customer Service", status: "paused", customers: 7, category: "Support" },
+  { id: 12, name: "Billing Counter", status: "running", customers: 9, category: "General" },
+];
 
-// ─── Sidebar ──────────────────────────────────────────────────────────────────
-function Sidebar({ activeTab, onTabChange, business }) {
+const MOCK_CATEGORIES = ["General", "VIP", "Support"];
+
+const MOCK_PROFILE = {
+  name: "John Doe",
+  email: "john.doe@waitless.com",
+  avatar: null,
+};
+
+// ========================
+// SIDEBAR COMPONENT
+// ========================
+const Sidebar = ({ open, onClose, isMobile }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [profile, setProfile] = useState(null);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/');
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const { data } = await axios.get("/api/business/profile");
+      setProfile(data);
+    } catch (err) {
+      console.error("Failed to fetch profile:", err.message);
+      setProfile(MOCK_PROFILE);
+    }
   };
 
   const navItems = [
-    { id: 'queue', label: 'Queue', icon: <QueueOutlined fontSize="small" /> },
-    { id: 'analytics', label: 'Analytics', icon: <BarChartOutlined fontSize="small" /> },
-    { id: 'settings', label: 'Settings', icon: <SettingsOutlined fontSize="small" /> },
+    { label: "Queue", icon: <QueueIcon />, path: "/" },
+    { label: "Analytics", icon: <AnalyticsIcon />, path: "/analytics" },
+    { label: "Settings", icon: <SettingsIcon />, path: "/settings" },
   ];
 
-  return (
-    <Box sx={{
-      width: 240, flexShrink: 0,
-      background: '#061220',
-      borderRight: '1px solid rgba(0,229,255,0.08)',
-      display: 'flex', flexDirection: 'column',
-      height: '100vh', position: 'sticky', top: 0,
-    }}>
-      {/* Logo */}
-      <Box sx={{ px: 3, py: 3, borderBottom: '1px solid rgba(0,229,255,0.08)' }}>
-        <Typography sx={{
-          fontFamily: '"Syne",sans-serif', fontSize: 22, fontWeight: 800,
-          background: 'linear-gradient(135deg,#00E5FF,#7B61FF)',
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          letterSpacing: '-0.01em',
-        }}>
-          WaitLess
+  const isActive = (path) => location.pathname === path;
+
+  const handleNav = (path) => {
+    navigate(path);
+    if (isMobile) onClose();
+  };
+
+  const handleLogout = async () => {
+    try {
+      await axios.post("/api/business/logout");
+    } catch (err) {
+      console.error("Logout error:", err.message);
+    }
+    localStorage.removeItem("token");
+    window.location.href = "/login";
+    console.log("Logout clicked");
+  };
+
+  const drawerContent = (
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", py: 2 }}>
+      <Box sx={{ px: 2.5, mb: 3, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Typography variant="h5" sx={{ fontWeight: 700, color: "#ffffff", letterSpacing: "-0.02em" }}>
+          Waitless
         </Typography>
-        <Typography variant="caption" sx={{ color: 'text.secondary' }}>Business Dashboard</Typography>
+        {isMobile && (
+          <IconButton onClick={onClose} sx={{ color: "#8a8a8a" }}>
+            <ChevronLeftIcon />
+          </IconButton>
+        )}
       </Box>
 
-      {/* Nav */}
-      <Box sx={{ flex: 1, px: 1.5, py: 2 }}>
-        <Typography sx={{ fontSize: 10, color: 'text.secondary', letterSpacing: '0.1em', textTransform: 'uppercase', px: 1.5, mb: 1 }}>
-          Menu
-        </Typography>
-        <Stack spacing={0.5}>
-          {navItems.map((item) => (
-            <NavItem
-              key={item.id}
-              icon={item.icon}
-              label={item.label}
-              active={activeTab === item.id}
-              onClick={() => onTabChange(item.id)}
-            />
-          ))}
-        </Stack>
-      </Box>
+      <List sx={{ px: 1.5, flexGrow: 1 }}>
+        {navItems.map((item) => (
+          <ListItem key={item.label} disablePadding sx={{ mb: 0.5 }}>
+            <ListItemButton
+              onClick={() => handleNav(item.path)}
+              sx={{
+                borderRadius: "8px",
+                py: 1,
+                px: 1.5,
+                backgroundColor: isActive(item.path) ? "#2a2a35" : "transparent",
+                color: isActive(item.path) ? "#ffffff" : "#8a8a8a",
+                "&:hover": {
+                  backgroundColor: isActive(item.path) ? "#2a2a35" : "#1e1e28",
+                  color: "#ffffff",
+                },
+              }}
+            >
+              <ListItemIcon sx={{ color: "inherit", minWidth: 36, "& .MuiSvgIcon-root": { fontSize: 20 } }}>
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText
+                primary={item.label}
+                primaryTypographyProps={{ fontSize: "0.875rem", fontWeight: isActive(item.path) ? 600 : 400 }}
+              />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
 
-      {/* Profile */}
-      <Box sx={{
-        px: 2, py: 2,
-        borderTop: '1px solid rgba(0,229,255,0.08)',
-      }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
-          <Avatar sx={{
-            width: 36, height: 36, fontSize: 14, fontWeight: 600,
-            background: 'linear-gradient(135deg,#00E5FF,#7B61FF)',
-            color: '#000',
-          }}>
-            {(business?.name || 'B').charAt(0).toUpperCase()}
-          </Avatar>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography sx={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {business?.name || 'Business'}
-            </Typography>
-            <Typography variant="caption" sx={{ color: 'text.secondary', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>
-              {business?.email || ''}
-            </Typography>
+      <Divider sx={{ borderColor: "#2a2a35", mx: 2 }} />
+      <Box sx={{ px: 2, pt: 2, pb: 1, display: "flex", alignItems: "center", gap: 1.5 }}>
+        {profile ? (
+          <>
+            <Avatar
+              src={profile.avatar}
+              sx={{ width: 36, height: 36, bgcolor: "#2a2a35", color: "#ffffff", fontSize: "0.875rem", fontWeight: 600 }}
+            >
+              {!profile.avatar && profile.name ? profile.name.charAt(0).toUpperCase() : "?"}
+            </Avatar>
+            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: "#e0e0e0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {profile.name}
+              </Typography>
+              <Typography variant="caption" sx={{ color: "#8a8a8a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", display: "block" }}>
+                {profile.email}
+              </Typography>
+            </Box>
+            <Tooltip title="Logout">
+              <IconButton onClick={handleLogout} size="small" sx={{ color: "#8a8a8a", "&:hover": { color: "#ef4444" } }}>
+                <LogoutIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </>
+        ) : (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, width: "100%" }}>
+            <Skeleton variant="circular" width={36} height={36} />
+            <Box sx={{ flexGrow: 1 }}>
+              <Skeleton variant="text" width="80%" height={18} />
+              <Skeleton variant="text" width="60%" height={14} />
+            </Box>
           </Box>
-        </Box>
-        <Button
-          fullWidth variant="outlined" size="small"
-          startIcon={<LogoutOutlined sx={{ fontSize: 16 }} />}
-          onClick={handleLogout}
-          sx={{
-            fontSize: 12, py: 0.8, borderRadius: 2,
-            borderColor: 'rgba(255,77,106,0.3)', color: '#FF4D6A',
-            '&:hover': { borderColor: '#FF4D6A', background: 'rgba(255,77,106,0.06)' },
-          }}
-        >
-          Logout
-        </Button>
+        )}
       </Box>
     </Box>
   );
-}
 
-// ─── Queue Page ───────────────────────────────────────────────────────────────
-function QueuePage() {
+  return isMobile ? (
+    <Drawer
+      variant="temporary"
+      open={open}
+      onClose={onClose}
+      ModalProps={{ keepMounted: true }}
+      sx={{ "& .MuiDrawer-paper": { width: DRAWER_WIDTH, boxSizing: "border-box" } }}
+    >
+      {drawerContent}
+    </Drawer>
+  ) : (
+    <Drawer
+      variant="permanent"
+      sx={{ width: DRAWER_WIDTH, flexShrink: 0, "& .MuiDrawer-paper": { width: DRAWER_WIDTH, boxSizing: "border-box" } }}
+    >
+      {drawerContent}
+    </Drawer>
+  );
+};
+
+// ========================
+// QUEUE PAGE COMPONENT
+// ========================
+const QueuePage = () => {
   const [queues, setQueues] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [categories, setCategories] = useState([]);
   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, queue: null });
-  const [actionLoading, setActionLoading] = useState('');
-  const [createDialog, setCreateDialog] = useState(false);
-  const [newQueueName, setNewQueueName] = useState('');
-  const [newQueueCategory, setNewQueueCategory] = useState('');
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+  const wsRef = useRef(null);
+
+  // ---- Create Queue Dialog State ----
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({ name: "", category: "", detail: "" });
+  const [createFormErrors, setCreateFormErrors] = useState({});
   const [createLoading, setCreateLoading] = useState(false);
 
-  // ── Fetch queues ────────────────────────────────────────────────────────────
-  const fetchQueues = useCallback(async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get('/api/queue', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setQueues(res.data);
-      setError('');
-    } catch (err) {
-      setError('Failed to load queues. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const ROWS_PER_PAGE = 5;
 
-  useEffect(() => { fetchQueues(); }, [fetchQueues]);
-
-  // ── WebSocket — listen for customer count changes ───────────────────────────
   useEffect(() => {
-    const socket = io('/', { auth: { token: localStorage.getItem('token') } });
-
-    socket.on('queue-updated', ({ queueId, waitingCount }) => {
-      setQueues(prev => prev.map(q =>
-        q._id === queueId ? { ...q, waitingCount } : q
-      ));
-    });
-
-    return () => socket.disconnect();
+    fetchCategories();
   }, []);
 
-  // ── Derived status for each queue ───────────────────────────────────────────
-  const queuesWithStatus = useMemo(() =>
-    queues.map(q => ({ ...q, derivedStatus: deriveStatus(q) })),
-    [queues]
-  );
-
-  // ── Categories from data ────────────────────────────────────────────────────
-  const categories = useMemo(() => {
-    const cats = [...new Set(queues.map(q => q.category).filter(Boolean))];
-    return cats;
-  }, [queues]);
-
-  // ── Filtered queues ─────────────────────────────────────────────────────────
-  const filtered = useMemo(() => {
-    return queuesWithStatus.filter(q => {
-      const matchSearch = q.name.toLowerCase().includes(search.toLowerCase());
-      const matchStatus = statusFilter === 'all' || q.derivedStatus === statusFilter;
-      const matchCategory = categoryFilter === 'all' || q.category === categoryFilter;
-      return matchSearch && matchStatus && matchCategory;
-    });
-  }, [queuesWithStatus, search, statusFilter, categoryFilter]);
-
-  // ── Paginated rows ──────────────────────────────────────────────────────────
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ROWS_PER_PAGE));
-  const paginated = filtered.slice((page - 1) * ROWS_PER_PAGE, page * ROWS_PER_PAGE);
-
-  // reset page when filters change
-  useEffect(() => { setPage(1); }, [search, statusFilter, categoryFilter]);
-
-  // ── Pause / Resume ──────────────────────────────────────────────────────────
-  const handlePauseToggle = async (queue) => {
-    setActionLoading(queue._id + '_pause');
+  const fetchCategories = async () => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.patch(`/api/queue/${queue._id}/${queue.isPaused ? 'resume' : 'pause'}`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setQueues(prev => prev.map(q =>
-        q._id === queue._id ? { ...q, isPaused: !q.isPaused } : q
-      ));
-    } catch {
-      setError('Failed to update queue status.');
-    } finally { setActionLoading(''); }
+      const { data } = await axios.get("/api/queue/categories");
+      setCategories(data);
+    } catch (err) {
+      console.error("Failed to fetch categories:", err.message);
+      setCategories(MOCK_CATEGORIES);
+    }
   };
 
-  // ── Delete ──────────────────────────────────────────────────────────────────
-  const handleDelete = async () => {
+  const fetchQueues = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = {
+        page,
+        limit: ROWS_PER_PAGE,
+        ...(searchQuery && { search: searchQuery }),
+        ...(statusFilter !== "all" && { status: statusFilter }),
+        ...(categoryFilter !== "all" && { category: categoryFilter }),
+      };
+
+      const { data } = await axios.get("/api/queue/getqueues", { params });
+      setQueues(data.queues || data);
+      setTotalPages(data.totalPages || Math.ceil((data.total || data.length) / ROWS_PER_PAGE));
+    } catch (err) {
+      console.error("Failed to fetch queues:", err.message);
+      let filtered = [...MOCK_QUEUES];
+      if (searchQuery) {
+        filtered = filtered.filter((q) => q.name.toLowerCase().includes(searchQuery.toLowerCase()));
+      }
+      if (statusFilter !== "all") {
+        filtered = filtered.filter((q) => q.status === statusFilter);
+      }
+      if (categoryFilter !== "all") {
+        filtered = filtered.filter((q) => q.category === categoryFilter);
+      }
+      const total = filtered.length;
+      const start = (page - 1) * ROWS_PER_PAGE;
+      const end = start + ROWS_PER_PAGE;
+      setQueues(filtered.slice(start, end));
+      setTotalPages(Math.ceil(total / ROWS_PER_PAGE));
+    }
+    setLoading(false);
+  }, [page, searchQuery, statusFilter, categoryFilter]);
+
+  useEffect(() => {
+    fetchQueues();
+  }, [fetchQueues]);
+
+  // WebSocket
+  useEffect(() => {
+    const connectWebSocket = () => {
+      try {
+        wsRef.current = new WebSocket(WS_URL);
+        wsRef.current.onopen = () => console.log("WebSocket connected");
+        wsRef.current.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.queueId && typeof data.customers === "number") {
+              setQueues((prev) =>
+                prev.map((q) => {
+                  if (q.id === data.queueId) {
+                    const newStatus = getStatusFromCount(data.customers, q.status);
+                    return { ...q, customers: data.customers, status: newStatus };
+                  }
+                  return q;
+                })
+              );
+            }
+          } catch (e) {
+            console.error("WebSocket message parse error:", e);
+          }
+        };
+        wsRef.current.onerror = (error) => console.error("WebSocket error:", error);
+        wsRef.current.onclose = () => {
+          console.log("WebSocket disconnected. Reconnecting in 5s...");
+          setTimeout(connectWebSocket, 5000);
+        };
+      } catch (err) {
+        console.error("WebSocket connection failed:", err);
+      }
+    };
+    connectWebSocket();
+    return () => {
+      if (wsRef.current) wsRef.current.close();
+    };
+  }, []);
+
+  const handleSearch = (e) => { setSearchQuery(e.target.value); setPage(1); };
+  const handleStatusFilter = (e) => { setStatusFilter(e.target.value); setPage(1); };
+  const handleCategoryFilter = (e) => { setCategoryFilter(e.target.value); setPage(1); };
+  const handlePageChange = (event, value) => { setPage(value); };
+
+  const handlePauseResume = async (queue) => {
+    const isPaused = queue.status === "paused";
+    try {
+      await axios.patch(`/api/queue/pause/${queue.id}`);
+      setQueues((prev) =>
+        prev.map((q) => {
+          if (q.id === queue.id) {
+            const newStatus = isPaused ? getStatusFromCount(q.customers, "running") : "paused";
+            return { ...q, status: newStatus };
+          }
+          return q;
+        })
+      );
+      setSnackbar({ open: true, message: `Queue "${queue.name}" ${isPaused ? "resumed" : "paused"} successfully`, severity: "success" });
+    } catch (err) {
+      console.error("Pause/Resume failed:", err.message);
+      setQueues((prev) =>
+        prev.map((q) => {
+          if (q.id === queue.id) {
+            const newStatus = isPaused ? getStatusFromCount(q.customers, "running") : "paused";
+            return { ...q, status: newStatus };
+          }
+          return q;
+        })
+      );
+      setSnackbar({ open: true, message: `Queue "${queue.name}" ${isPaused ? "resumed" : "paused"} (offline)`, severity: "info" });
+    }
+  };
+
+  const handleDeleteClick = (queue) => { setDeleteDialog({ open: true, queue }); };
+
+  const handleDeleteConfirm = async () => {
     const queue = deleteDialog.queue;
     if (!queue) return;
-    setActionLoading(queue._id + '_delete');
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`/api/queue/${queue._id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setQueues(prev => prev.filter(q => q._id !== queue._id));
-      setDeleteDialog({ open: false, queue: null });
-    } catch {
-      setError('Failed to delete queue.');
-    } finally { setActionLoading(''); }
+      await axios.delete(`/api/queue/delete/${queue.id}`);
+      removeQueueFromState(queue);
+    } catch (err) {
+      console.error("Delete failed:", err.message);
+      removeQueueFromState(queue);
+    }
+    setDeleteDialog({ open: false, queue: null });
   };
 
-  // ── Create Queue ────────────────────────────────────────────────────────────
-  const handleCreate = async () => {
-    if (!newQueueName.trim()) return;
+  const removeQueueFromState = (queue) => {
+    setQueues((prev) => {
+      const updated = prev.filter((q) => q.id !== queue.id);
+      if (updated.length === 0 && page > 1) setPage((p) => p - 1);
+      return updated;
+    });
+    setSnackbar({ open: true, message: `Queue "${queue.name}" deleted successfully`, severity: "success" });
+  };
+
+  const handleDeleteCancel = () => { setDeleteDialog({ open: false, queue: null }); };
+
+  // ---- Create Queue Handlers ----
+  const handleCreateDialogOpen = () => {
+    setCreateForm({ name: "", category: "", detail: "" });
+    setCreateFormErrors({});
+    setCreateDialogOpen(true);
+  };
+
+  const handleCreateDialogClose = () => {
+    if (createLoading) return; // prevent closing while submitting
+    setCreateDialogOpen(false);
+    setCreateForm({ name: "", category: "", detail: "" });
+    setCreateFormErrors({});
+  };
+
+  const handleCreateFormChange = (field) => (e) => {
+    setCreateForm((prev) => ({ ...prev, [field]: e.target.value }));
+    // Clear error on change
+    if (createFormErrors[field]) {
+      setCreateFormErrors((prev) => ({ ...prev, [field]: "" }));
+    }
+  };
+
+  const handleCreateQueue = async () => {
+    // Validate
+    const errors = {};
+    if (!createForm.name.trim()) {
+      errors.name = "Queue name is required";
+    }
+    if (Object.keys(errors).length > 0) {
+      setCreateFormErrors(errors);
+      return;
+    }
+
     setCreateLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.post('/api/queue', {
-        name: newQueueName.trim(),
-        category: newQueueCategory.trim() || 'General',
-      }, {
-        headers: { Authorization: `Bearer ${token}` },
+      const payload = {
+        name: createForm.name.trim(),
+        ...(createForm.category.trim() && { category: createForm.category.trim() }),
+        ...(createForm.detail.trim() && { detail: createForm.detail.trim() }),
+        // businessId will be attached by your backend from the auth token
+        // If you need to send it from frontend, uncomment below:
+        // businessId: localStorage.getItem('businessId'),
+      };
+
+      await axios.post("/api/queue/create", payload);
+
+      setSnackbar({
+        open: true,
+        message: `Queue "${createForm.name.trim()}" created successfully`,
+        severity: "success",
       });
-      setQueues(prev => [res.data, ...prev]);
-      setCreateDialog(false);
-      setNewQueueName('');
-      setNewQueueCategory('');
-    } catch {
-      setError('Failed to create queue.');
-    } finally { setCreateLoading(false); }
+
+      setCreateDialogOpen(false);
+      setCreateForm({ name: "", category: "", detail: "" });
+      setCreateFormErrors({});
+
+      // Refresh queues & categories
+      fetchQueues();
+      fetchCategories();
+    } catch (err) {
+      console.error("Create queue failed:", err.message);
+      const errorMsg =
+        err.response?.data?.message || err.response?.data?.error || "Failed to create queue. Please try again.";
+      setSnackbar({
+        open: true,
+        message: errorMsg,
+        severity: "error",
+      });
+    }
+    setCreateLoading(false);
   };
 
   return (
-    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+    <Box sx={{ p: { xs: 2, md: 3 } }}>
       {/* Header */}
-      <Box sx={{
-        px: 4, py: 3,
-        borderBottom: '1px solid rgba(0,229,255,0.08)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        flexWrap: 'wrap', gap: 2,
-      }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Box>
-          <Typography variant="h4" sx={{ fontSize: 26, letterSpacing: '-0.01em' }}>Queues</Typography>
-          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-            Manage and monitor your active queues
+          <Typography variant="caption" sx={{ color: "#8a8a8a", display: "block", mb: 0.5 }}>
+            🏠 &nbsp;Dashboard &gt; Queue
+          </Typography>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: "#ffffff", letterSpacing: "-0.02em" }}>
+            Queue
           </Typography>
         </Box>
         <Button
           variant="contained"
-          startIcon={<AddOutlined />}
-          onClick={() => setCreateDialog(true)}
-          sx={{ px: 3, py: 1.2, borderRadius: 2, fontWeight: 600, fontSize: 14 }}
+          startIcon={<AddIcon />}
+          onClick={handleCreateDialogOpen}
+          sx={{
+            bgcolor: "#ffffff",
+            color: "#111118",
+            fontWeight: 600,
+            px: 3,
+            py: 1,
+            "&:hover": { bgcolor: "#e0e0e0" },
+          }}
         >
           Create Queue
         </Button>
       </Box>
 
       {/* Filters */}
-      <Box sx={{
-        px: 4, py: 2.5,
-        display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center',
-        borderBottom: '1px solid rgba(0,229,255,0.06)',
-      }}>
-        <TextField
-          placeholder="Search queues..."
-          size="small"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchOutlined sx={{ color: 'text.secondary', fontSize: 18 }} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ width: 280 }}
-        />
-
-        <FormControl size="small" sx={{ minWidth: 160 }}>
-          <Select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            displayEmpty
-          >
-            <MenuItem value="all">All Statuses</MenuItem>
-            <MenuItem value="running">Running</MenuItem>
-            <MenuItem value="no_customers">No Customers</MenuItem>
-            <MenuItem value="paused">Paused</MenuItem>
-            <MenuItem value="ended">Ended</MenuItem>
-          </Select>
-        </FormControl>
-
-        <FormControl size="small" sx={{ minWidth: 160 }}>
-          <Select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            displayEmpty
-          >
-            <MenuItem value="all">All Categories</MenuItem>
-            {categories.map(cat => (
-              <MenuItem key={cat} value={cat}>{cat}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        {filtered.length > 0 && (
-          <Typography variant="caption" sx={{ color: 'text.secondary', ml: 'auto' }}>
-            {filtered.length} queue{filtered.length !== 1 ? 's' : ''} found
+      <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap", alignItems: "flex-end" }}>
+        <Box sx={{ flex: "1 1 300px", minWidth: 200 }}>
+          <Typography variant="caption" sx={{ color: "#8a8a8a", mb: 0.5, display: "block" }}>
+            Search for queue
           </Typography>
-        )}
-      </Box>
+          <TextField
+            placeholder="Search"
+            size="small"
+            fullWidth
+            value={searchQuery}
+            onChange={handleSearch}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: "#8a8a8a", fontSize: 20 }} />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ "& .MuiInputBase-root": { bgcolor: "#1e1e28", fontSize: "0.875rem" } }}
+          />
+        </Box>
 
-      {/* Error */}
-      {error && (
-        <Alert severity="error" onClose={() => setError('')} sx={{ mx: 4, mt: 2 }}>
-          {error}
-        </Alert>
-      )}
+        <Box sx={{ minWidth: 160 }}>
+          <Typography variant="caption" sx={{ color: "#8a8a8a", mb: 0.5, display: "block" }}>
+            Status
+          </Typography>
+          <FormControl size="small" fullWidth>
+            <Select value={statusFilter} onChange={handleStatusFilter} sx={{ bgcolor: "#1e1e28", fontSize: "0.875rem" }}>
+              <MenuItem value="all">All</MenuItem>
+              <MenuItem value="running">Running</MenuItem>
+              <MenuItem value="no customers">No Customers</MenuItem>
+              <MenuItem value="paused">Paused</MenuItem>
+              <MenuItem value="ended">Ended</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+
+        <Box sx={{ minWidth: 160 }}>
+          <Typography variant="caption" sx={{ color: "#8a8a8a", mb: 0.5, display: "block" }}>
+            Category
+          </Typography>
+          <FormControl size="small" fullWidth>
+            <Select value={categoryFilter} onChange={handleCategoryFilter} sx={{ bgcolor: "#1e1e28", fontSize: "0.875rem" }}>
+              <MenuItem value="all">All</MenuItem>
+              {categories.map((cat) => (
+                <MenuItem key={cat} value={cat}>{cat}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+      </Box>
 
       {/* Table */}
-      <Box sx={{ flex: 1, px: 4, py: 3, overflowY: 'auto' }}>
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200 }}>
-            <CircularProgress sx={{ color: 'primary.main' }} />
-          </Box>
-        ) : paginated.length === 0 ? (
-          <Box sx={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center',
-            justifyContent: 'center', height: 200, gap: 1,
-          }}>
-            <QueueOutlined sx={{ fontSize: 48, color: 'text.secondary', opacity: 0.4 }} />
-            <Typography sx={{ color: 'text.secondary', fontSize: 14 }}>
-              {filtered.length === 0 && queues.length > 0 ? 'No queues match your filters' : 'No queues yet. Create your first one!'}
-            </Typography>
-          </Box>
-        ) : (
-          <TableContainer sx={{
-            borderRadius: 2,
-            border: '1px solid rgba(0,229,255,0.08)',
-            background: '#061220',
-          }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ width: '40%' }}>Queue</TableCell>
-                  <TableCell sx={{ width: '20%' }}>Status</TableCell>
-                  <TableCell sx={{ width: '25%' }}>Customers Waiting</TableCell>
-                  <TableCell sx={{ width: '15%', textAlign: 'right' }}>Actions</TableCell>
+      <TableContainer
+        component={Paper}
+        sx={{ bgcolor: "#16161e", border: "1px solid #2a2a35", borderRadius: "12px", overflow: "hidden" }}
+      >
+        <Table>
+          <TableHead>
+            <TableRow sx={{ bgcolor: "#1a1a24" }}>
+              <TableCell>Queue</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Customers (Waiting)</TableCell>
+              <TableCell align="right">Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {loading ? (
+              [...Array(ROWS_PER_PAGE)].map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><Skeleton variant="text" width="60%" /></TableCell>
+                  <TableCell><Skeleton variant="rounded" width={80} height={24} /></TableCell>
+                  <TableCell><Skeleton variant="text" width={30} /></TableCell>
+                  <TableCell align="right">
+                    <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
+                      <Skeleton variant="circular" width={32} height={32} />
+                      <Skeleton variant="circular" width={32} height={32} />
+                    </Box>
+                  </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {paginated.map((queue) => (
-                  <TableRow
-                    key={queue._id}
-                    sx={{
-                      '&:hover': { background: 'rgba(0,229,255,0.03)' },
-                      transition: 'background 0.15s ease',
-                    }}
-                  >
-                    {/* Queue name + category */}
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <Box sx={{
-                          width: 36, height: 36, borderRadius: 1.5,
-                          background: 'rgba(0,229,255,0.08)',
-                          border: '1px solid rgba(0,229,255,0.15)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          flexShrink: 0,
-                        }}>
-                          <QueueOutlined sx={{ fontSize: 16, color: 'primary.main' }} />
-                        </Box>
-                        <Box>
-                          <Typography sx={{ fontSize: 14, fontWeight: 500 }}>{queue.name}</Typography>
-                          {queue.category && (
-                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                              {queue.category}
-                            </Typography>
-                          )}
-                        </Box>
-                      </Box>
-                    </TableCell>
+              ))
+            ) : queues.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
+                  <Typography variant="body2" sx={{ color: "#8a8a8a" }}>No queues found</Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              queues.map((queue) => (
+                <TableRow key={queue.id} sx={{ "&:hover": { bgcolor: "#1a1a24" }, transition: "background-color 0.15s" }}>
+                  <TableCell>
+                    <Typography variant="body2" sx={{ fontWeight: 500, color: "#e0e0e0" }}>{queue.name}</Typography>
+                    {queue.category && (
+                      <Typography variant="caption" sx={{ color: "#8a8a8a" }}>{queue.category}</Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>{getStatusChip(queue.status)}</TableCell>
+                  <TableCell>
+                    <Typography
+                      variant="body2"
+                      sx={{ fontWeight: 600, color: queue.customers > 0 ? "#22c55e" : "#8a8a8a", fontVariantNumeric: "tabular-nums" }}
+                    >
+                      {queue.customers}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align="right">
+                    <Box sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end" }}>
+                      <Tooltip title={queue.status === "paused" ? "Resume" : "Pause"}>
+                        <IconButton
+                          size="small"
+                          onClick={() => handlePauseResume(queue)}
+                          disabled={queue.status === "ended"}
+                          sx={{
+                            color: queue.status === "paused" ? "#22c55e" : "#f59e0b",
+                            "&:hover": { bgcolor: queue.status === "paused" ? "#22c55e15" : "#f59e0b15" },
+                          }}
+                        >
+                          {queue.status === "paused" ? <PlayArrowIcon fontSize="small" /> : <PauseIcon fontSize="small" />}
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Delete">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDeleteClick(queue)}
+                          sx={{ color: "#ef4444", "&:hover": { bgcolor: "#ef444415" } }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
-                    {/* Status */}
-                    <TableCell>
-                      <StatusChip status={queue.derivedStatus} />
-                    </TableCell>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+          <Pagination
+            count={totalPages}
+            page={page}
+            onChange={handlePageChange}
+            shape="rounded"
+            sx={{
+              "& .MuiPaginationItem-root": {
+                color: "#8a8a8a",
+                borderColor: "#2a2a35",
+                "&.Mui-selected": { bgcolor: "#2a2a35", color: "#ffffff" },
+                "&:hover": { bgcolor: "#1e1e28" },
+              },
+            }}
+          />
+        </Box>
+      )}
 
-                    {/* Customers waiting */}
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <PeopleAltOutlined sx={{ fontSize: 16, color: 'text.secondary' }} />
-                        <Typography sx={{
-                          fontSize: 15, fontWeight: 600,
-                          color: (queue.waitingCount ?? 0) > 0 ? 'primary.main' : 'text.secondary',
-                        }}>
-                          {queue.waitingCount ?? 0}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>waiting</Typography>
-                      </Box>
-                    </TableCell>
-
-                    {/* Actions */}
-                    <TableCell sx={{ textAlign: 'right' }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
-                        <Tooltip title={queue.isPaused ? 'Resume Queue' : 'Pause Queue'}>
-                          <span>
-                            <IconButton
-                              size="small"
-                              disabled={actionLoading === queue._id + '_pause' || queue.derivedStatus === 'ended'}
-                              onClick={() => handlePauseToggle(queue)}
-                              sx={{
-                                color: queue.isPaused ? 'success.main' : 'warning.main',
-                                '&:hover': {
-                                  background: queue.isPaused
-                                    ? 'rgba(0,255,148,0.08)'
-                                    : 'rgba(255,184,0,0.08)',
-                                },
-                              }}
-                            >
-                              {actionLoading === queue._id + '_pause'
-                                ? <CircularProgress size={16} />
-                                : queue.isPaused
-                                  ? <PlayCircleOutlined fontSize="small" />
-                                  : <PauseCircleOutlined fontSize="small" />
-                              }
-                            </IconButton>
-                          </span>
-                        </Tooltip>
-                        <Tooltip title="Delete Queue">
-                          <span>
-                            <IconButton
-                              size="small"
-                              disabled={actionLoading === queue._id + '_delete'}
-                              onClick={() => setDeleteDialog({ open: true, queue })}
-                              sx={{
-                                color: 'error.main',
-                                '&:hover': { background: 'rgba(255,77,106,0.08)' },
-                              }}
-                            >
-                              {actionLoading === queue._id + '_delete'
-                                ? <CircularProgress size={16} />
-                                : <DeleteOutlined fontSize="small" />
-                              }
-                            </IconButton>
-                          </span>
-                        </Tooltip>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-
-        {/* Pagination */}
-        {!loading && filtered.length > ROWS_PER_PAGE && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-            <Pagination
-              count={totalPages}
-              page={page}
-              onChange={(_, v) => setPage(v)}
-              variant="outlined"
-              shape="rounded"
-              size="medium"
-            />
+      {/* ======================== */}
+      {/* CREATE QUEUE DIALOG      */}
+      {/* ======================== */}
+      <Dialog
+        open={createDialogOpen}
+        onClose={handleCreateDialogClose}
+        maxWidth="sm"
+        fullWidth
+        slotProps={{
+          backdrop: {
+            sx: {
+              backgroundColor: "rgba(0, 0, 0, 0.6)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
+            },
+          },
+        }}
+        PaperProps={{
+          sx: {
+            bgcolor: "#16161e",
+            border: "1px solid #2a2a35",
+            borderRadius: "16px",
+            boxShadow: "0 24px 48px rgba(0,0,0,0.4)",
+          },
+        }}
+      >
+        {/* Dialog Header */}
+        <DialogTitle
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            pb: 1,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: "10px",
+                bgcolor: "#2a2a35",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <QueueIcon sx={{ color: "#ffffff", fontSize: 20 }} />
+            </Box>
+            <Box>
+              <Typography variant="h6" sx={{ color: "#ffffff", fontWeight: 600, lineHeight: 1.2 }}>
+                Create Queue
+              </Typography>
+              <Typography variant="caption" sx={{ color: "#8a8a8a" }}>
+                Add a new queue to your dashboard
+              </Typography>
+            </Box>
           </Box>
-        )}
-      </Box>
+          <IconButton
+            onClick={handleCreateDialogClose}
+            disabled={createLoading}
+            size="small"
+            sx={{ color: "#8a8a8a", "&:hover": { color: "#ffffff", bgcolor: "#2a2a35" } }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </DialogTitle>
 
-      {/* Delete Confirm Dialog */}
-      <Dialog open={deleteDialog.open} onClose={() => setDeleteDialog({ open: false, queue: null })}>
-        <DialogTitle sx={{ fontFamily: '"Syne",sans-serif', fontSize: 18 }}>Delete Queue?</DialogTitle>
-        <DialogContent>
-          <DialogContentText sx={{ color: 'text.secondary', fontSize: 14 }}>
-            Are you sure you want to delete <strong style={{ color: '#F0F6FF' }}>{deleteDialog.queue?.name}</strong>?
-            This will remove all associated customer data and cannot be undone.
-          </DialogContentText>
+        <Divider sx={{ borderColor: "#2a2a35" }} />
+
+        {/* Dialog Body */}
+        <DialogContent sx={{ pt: 3, pb: 1 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+            {/* Queue Name */}
+            <Box>
+              <Typography variant="body2" sx={{ color: "#e0e0e0", mb: 0.75, fontWeight: 500 }}>
+                Queue Name <span style={{ color: "#ef4444" }}>*</span>
+              </Typography>
+              <TextField
+                placeholder="e.g. General Queue, VIP Lounge"
+                size="small"
+                fullWidth
+                value={createForm.name}
+                onChange={handleCreateFormChange("name")}
+                error={!!createFormErrors.name}
+                helperText={createFormErrors.name}
+                disabled={createLoading}
+                sx={{
+                  "& .MuiInputBase-root": { bgcolor: "#1e1e28", fontSize: "0.875rem" },
+                  "& .MuiFormHelperText-root": { color: "#ef4444", ml: 0.5 },
+                }}
+              />
+            </Box>
+
+            {/* Category */}
+            <Box>
+              <Typography variant="body2" sx={{ color: "#e0e0e0", mb: 0.75, fontWeight: 500 }}>
+                Category
+              </Typography>
+              <TextField
+                placeholder="e.g. General, VIP, Support"
+                size="small"
+                fullWidth
+                value={createForm.category}
+                onChange={handleCreateFormChange("category")}
+                disabled={createLoading}
+                sx={{
+                  "& .MuiInputBase-root": { bgcolor: "#1e1e28", fontSize: "0.875rem" },
+                }}
+              />
+            </Box>
+
+            {/* Details */}
+            <Box>
+              <Typography variant="body2" sx={{ color: "#e0e0e0", mb: 0.75, fontWeight: 500 }}>
+                Details
+              </Typography>
+              <TextField
+                placeholder="Describe this queue (optional)"
+                size="small"
+                fullWidth
+                multiline
+                rows={3}
+                value={createForm.detail}
+                onChange={handleCreateFormChange("detail")}
+                disabled={createLoading}
+                sx={{
+                  "& .MuiInputBase-root": { bgcolor: "#1e1e28", fontSize: "0.875rem" },
+                }}
+              />
+            </Box>
+          </Box>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
-          <Button variant="outlined" onClick={() => setDeleteDialog({ open: false, queue: null })}
-            sx={{ borderColor: 'rgba(0,229,255,0.2)', color: 'text.primary', borderRadius: 2 }}>
+
+        <Divider sx={{ borderColor: "#2a2a35" }} />
+
+        {/* Dialog Footer */}
+        <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
+          <Button
+            onClick={handleCreateDialogClose}
+            disabled={createLoading}
+            sx={{
+              color: "#8a8a8a",
+              px: 3,
+              "&:hover": { bgcolor: "#2a2a35", color: "#e0e0e0" },
+            }}
+          >
             Cancel
           </Button>
-          <Button variant="contained" color="error" onClick={handleDelete}
-            sx={{ borderRadius: 2, background: '#FF4D6A', '&:hover': { background: '#ff2a4f' } }}>
+          <Button
+            onClick={handleCreateQueue}
+            variant="contained"
+            disabled={createLoading}
+            sx={{
+              bgcolor: "#ffffff",
+              color: "#111118",
+              fontWeight: 600,
+              px: 3,
+              "&:hover": { bgcolor: "#e0e0e0" },
+              "&:disabled": { bgcolor: "#3a3a45", color: "#8a8a8a" },
+            }}
+          >
+            {createLoading ? (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <CircularProgress size={16} sx={{ color: "#8a8a8a" }} />
+                Creating...
+              </Box>
+            ) : (
+              "Create Queue"
+            )}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* DELETE DIALOG */}
+      <Dialog
+        open={deleteDialog.open}
+        onClose={handleDeleteCancel}
+        slotProps={{
+          backdrop: {
+            sx: {
+              backgroundColor: "rgba(0, 0, 0, 0.6)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
+            },
+          },
+        }}
+        PaperProps={{
+          sx: { bgcolor: "#1e1e28", border: "1px solid #2a2a35", borderRadius: "12px", minWidth: 360 },
+        }}
+      >
+        <DialogTitle sx={{ color: "#ffffff", fontWeight: 600 }}>Delete Queue</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ color: "#8a8a8a" }}>
+            Are you sure you want to delete{" "}
+            <strong style={{ color: "#e0e0e0" }}>"{deleteDialog.queue?.name}"</strong>?
+            This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button onClick={handleDeleteCancel} sx={{ color: "#8a8a8a", "&:hover": { bgcolor: "#2a2a35" } }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            variant="contained"
+            sx={{ bgcolor: "#ef4444", color: "#ffffff", "&:hover": { bgcolor: "#dc2626" } }}
+          >
             Delete
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Create Queue Dialog */}
-      <Dialog open={createDialog} onClose={() => setCreateDialog(false)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ fontFamily: '"Syne",sans-serif', fontSize: 18 }}>Create New Queue</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2.5} sx={{ mt: 1 }}>
-            <TextField
-              label="Queue Name"
-              fullWidth
-              size="small"
-              value={newQueueName}
-              onChange={(e) => setNewQueueName(e.target.value)}
-              placeholder="e.g. General Consultation"
-              onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-              autoFocus
-            />
-            <TextField
-              label="Category (optional)"
-              fullWidth
-              size="small"
-              value={newQueueCategory}
-              onChange={(e) => setNewQueueCategory(e.target.value)}
-              placeholder="e.g. Clinic, Salon, Bank"
-            />
-          </Stack>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
-          <Button variant="outlined" onClick={() => setCreateDialog(false)}
-            sx={{ borderColor: 'rgba(0,229,255,0.2)', color: 'text.primary', borderRadius: 2 }}>
-            Cancel
-          </Button>
-          <Button variant="contained" onClick={handleCreate} disabled={createLoading || !newQueueName.trim()}
-            sx={{ borderRadius: 2, minWidth: 100 }}>
-            {createLoading ? <CircularProgress size={16} /> : 'Create'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{ borderRadius: "8px" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
-}
+};
 
-// ─── Analytics Placeholder ────────────────────────────────────────────────────
-function AnalyticsPage() {
-  return (
-    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ px: 4, py: 3, borderBottom: '1px solid rgba(0,229,255,0.08)' }}>
-        <Typography variant="h4" sx={{ fontSize: 26, letterSpacing: '-0.01em' }}>Analytics</Typography>
-        <Typography variant="caption" sx={{ color: 'text.secondary' }}>Queue performance and insights</Typography>
-      </Box>
-      <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 1 }}>
-        <BarChartOutlined sx={{ fontSize: 56, color: 'text.secondary', opacity: 0.3 }} />
-        <Typography sx={{ color: 'text.secondary', fontSize: 14 }}>Analytics coming soon</Typography>
-      </Box>
-    </Box>
-  );
-}
+// ========================
+// ANALYTICS PAGE
+// ========================
+const AnalyticsPage = () => (
+  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "80vh", flexDirection: "column", gap: 2 }}>
+    <AnalyticsIcon sx={{ fontSize: 64, color: "#2a2a35" }} />
+    <Typography variant="h5" sx={{ color: "#8a8a8a", fontWeight: 600 }}>Analytics</Typography>
+    <Typography variant="body2" sx={{ color: "#555" }}>Coming Soon</Typography>
+  </Box>
+);
 
-// ─── Settings Placeholder ─────────────────────────────────────────────────────
-function SettingsPage() {
-  return (
-    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ px: 4, py: 3, borderBottom: '1px solid rgba(0,229,255,0.08)' }}>
-        <Typography variant="h4" sx={{ fontSize: 26, letterSpacing: '-0.01em' }}>Settings</Typography>
-        <Typography variant="caption" sx={{ color: 'text.secondary' }}>Manage your business preferences</Typography>
-      </Box>
-      <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 1 }}>
-        <SettingsOutlined sx={{ fontSize: 56, color: 'text.secondary', opacity: 0.3 }} />
-        <Typography sx={{ color: 'text.secondary', fontSize: 14 }}>Settings coming soon</Typography>
-      </Box>
-    </Box>
-  );
-}
+// ========================
+// SETTINGS PAGE
+// ========================
+const SettingsPage = () => (
+  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "80vh", flexDirection: "column", gap: 2 }}>
+    <SettingsIcon sx={{ fontSize: 64, color: "#2a2a35" }} />
+    <Typography variant="h5" sx={{ color: "#8a8a8a", fontWeight: 600 }}>Settings</Typography>
+    <Typography variant="body2" sx={{ color: "#555" }}>Coming Soon</Typography>
+  </Box>
+);
 
-// ─── Main Export ──────────────────────────────────────────────────────────────
-export default function DashboardPage() {
-  const [activeTab, setActiveTab] = useState('queue');
-  const [business, setBusiness] = useState(null);
-  const navigate = useNavigate();
-
-  // Load business info from token
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) { navigate('/'); return; }
-    // Decode JWT payload to get business info
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      setBusiness({ name: payload.name, email: payload.email });
-    } catch {
-      // fallback — fetch from API if token payload doesn't have it
-      axios.get('/api/business/me', {
-        headers: { Authorization: `Bearer ${token}` },
-      }).then(res => setBusiness(res.data)).catch(() => navigate('/'));
-    }
-  }, [navigate]);
-
-  const renderContent = () => {
-    if (activeTab === 'queue') return <QueuePage />;
-    if (activeTab === 'analytics') return <AnalyticsPage />;
-    if (activeTab === 'settings') return <SettingsPage />;
-  };
+// ========================
+// MAIN APP COMPONENT
+// ========================
+const App = () => {
+  const isMobile = useMediaQuery(darkTheme.breakpoints.down("md"));
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <ThemeProvider theme={theme}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');`}</style>
-      <Box sx={{
-        display: 'flex', height: '100vh', overflow: 'hidden',
-        background: '#020A14', color: 'text.primary',
-      }}>
-        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} business={business} />
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto', background: '#020A14' }}>
-          {renderContent()}
+    <ThemeProvider theme={darkTheme}>
+      <CssBaseline />
+      <Box sx={{ display: "flex", minHeight: "100vh" }}>
+        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} isMobile={isMobile} />
+
+        <Box component="main" sx={{ flexGrow: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+          {isMobile && (
+            <AppBar position="sticky" elevation={0} sx={{ bgcolor: "#111118", borderBottom: "1px solid #2a2a35" }}>
+              <Toolbar sx={{ minHeight: "56px !important" }}>
+                <IconButton edge="start" onClick={() => setSidebarOpen(true)} sx={{ color: "#e0e0e0", mr: 1 }}>
+                  <MenuIcon />
+                </IconButton>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: "#ffffff" }}>Waitless</Typography>
+              </Toolbar>
+            </AppBar>
+          )}
+
+          <Box sx={{ flexGrow: 1, overflow: "auto" }}>
+            <Routes>
+              <Route path="/" element={<QueuePage />} />
+              <Route path="/analytics" element={<AnalyticsPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+            </Routes>
+          </Box>
         </Box>
       </Box>
     </ThemeProvider>
   );
-}
+};
+
+export default App;

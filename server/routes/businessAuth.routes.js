@@ -8,6 +8,7 @@ import { verifyToken } from '../middleware/auth.js';
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'jwt_secret';
 
+const tokenBlacklist = new Set();
 // Signup route
 router.post('/signup', async (req, res) => {
   try {
@@ -65,6 +66,40 @@ router.post('/login', async (req, res) => {
     res.status(200).json({ token, business });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
+  }
+});
+
+// Logout route
+router.post('/logout', verifyToken, (req, res) => {
+  try {
+    res.status(200).json({ 
+      success: true, 
+      message: 'Logout successful' 
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      message: 'Server error', 
+      error: error.message 
+    });
+  }
+});
+
+// Get profile route
+router.get('/profile', verifyToken, async (req, res) => {
+  try {
+    const business = await Business.findById(req.businessId).select('name email avatar');
+    
+    if (!business) {
+      return res.status(404).json({ message: 'Business not found' });
+    }
+    
+    res.status(200).json({
+      name: business.name,
+      email: business.email,
+      avatar: business.avatar || null
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
