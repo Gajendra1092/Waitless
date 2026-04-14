@@ -664,7 +664,7 @@ const QueueDetailsPage = () => {
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
             <Tooltip title="Back to Dashboard">
               <IconButton
-                onClick={() => navigate("/")}
+                onClick={() => navigate("/dashboard")}
                 sx={{
                   color: COLORS.textMuted,
                   border: `1px solid ${COLORS.border}`,
