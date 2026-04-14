@@ -31,6 +31,7 @@ import {
   Fade,
   Grow,
   Slide,
+  Switch,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -185,7 +186,24 @@ const StatCard = ({ icon, label, value, color, delay }) => (
 // ========================
 // CURRENTLY SERVING
 // ========================
-const CurrentlyServing = ({ customer, onComplete, onSkip, onCallNext, hasWaiting, loading }) => {
+const CurrentlyServing = ({ customer, onComplete, onSkip, onCallNext, hasWaiting, loading, isAutoCallEnabled, onToggleAutoCall, queuePaused }) => {
+  const autoCallToggle = (
+    <Box sx={{ position: "absolute", top: 16, right: 16, display: "flex", alignItems: "center", gap: 1, zIndex: 10 }}>
+      <Typography variant="caption" sx={{ color: isAutoCallEnabled ? COLORS.green : COLORS.textMuted, fontWeight: 600 }}>
+        Auto-Call
+      </Typography>
+      <Switch
+        size="small"
+        checked={isAutoCallEnabled}
+        onChange={(e) => onToggleAutoCall(e.target.checked)}
+        sx={{
+          "& .MuiSwitch-switchBase.Mui-checked": { color: COLORS.green },
+          "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { bgcolor: COLORS.green },
+        }}
+      />
+    </Box>
+  );
+
   if (!customer) {
     return (
       <Fade in timeout={500}>
@@ -203,14 +221,20 @@ const CurrentlyServing = ({ customer, onComplete, onSkip, onCallNext, hasWaiting
             justifyContent: "center",
             height: "100%",
             minHeight: 300,
+            position: "relative",
           }}
         >
+          {autoCallToggle}
           <PersonOffIcon sx={{ fontSize: 56, color: COLORS.border, mb: 2 }} />
           <Typography variant="h6" sx={{ color: COLORS.textMuted, fontWeight: 600, mb: 0.5 }}>
             No one being served
           </Typography>
           <Typography variant="caption" sx={{ color: COLORS.textDim }}>
-            {hasWaiting ? "Calling next customer..." : "Waiting for the next customer"}
+            {queuePaused 
+              ? "Queue is paused. Resume from dashboard to call next."
+              : hasWaiting 
+                ? (isAutoCallEnabled ? "Calling next customer..." : "Waiting for you to call the next customer") 
+                : "Waiting for the next customer"}
           </Typography>
           {hasWaiting && (
             <Button
@@ -247,6 +271,7 @@ const CurrentlyServing = ({ customer, onComplete, onSkip, onCallNext, hasWaiting
           overflow: "hidden",
         }}
       >
+        {autoCallToggle}
         {/* Glow */}
         <Box
           sx={{
@@ -376,6 +401,7 @@ const QueueDetailsPage = () => {
   const [skippedTotalPages, setSkippedTotalPages] = useState(1);
   const [completedPage, setCompletedPage] = useState(1);
   const [completedTotalPages, setCompletedTotalPages] = useState(1);
+  const [isAutoCallEnabled, setIsAutoCallEnabled] = useState(true);
 
   const autoCallInProgress = useRef(false);
 
@@ -480,18 +506,22 @@ const QueueDetailsPage = () => {
         message: `Token #${nextCustomer.tokenNumber || nextCustomer.token} (${nextCustomer.name}) called to counter`,
         severity: "success",
       });
-      fetchQueueDetails();
-      fetchWaitingList();
+      await fetchQueueDetails();
+      await fetchWaitingList();
     } catch (err) {
       console.error("Call next failed:", err.message);
       setSnackbar({ open: true, message: "Failed to call next. Try again.", severity: "error" });
+    } finally {
+      setActionLoading(false);
     }
-    setActionLoading(false);
   }, [waitingList, fetchQueueDetails, fetchWaitingList]);
 
   useEffect(() => {
-    const autoCall = async () => {
+    let intervalId;
+
+    const checkAndCall = async () => {
       if (
+        isAutoCallEnabled &&
         queueInfo &&
         queueInfo.status !== "paused" &&
         !currentCustomer &&
@@ -507,8 +537,19 @@ const QueueDetailsPage = () => {
         }, 1500);
       }
     };
-    autoCall();
-  }, [queueInfo, currentCustomer, waitingList, handleCallNext]);
+
+    // Run immediately when dependencies change
+    checkAndCall();
+
+    // Fallback interval to retry in case the process got stuck (e.g., network failure)
+    if (isAutoCallEnabled && queueInfo?.status !== "paused" && !currentCustomer && waitingList.length > 0) {
+      intervalId = setInterval(checkAndCall, 3000);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isAutoCallEnabled, queueInfo, currentCustomer, waitingList, handleCallNext]);
 
   // ---- ACTIONS ----
   const handleComplete = async () => {
@@ -683,6 +724,9 @@ const QueueDetailsPage = () => {
           onCallNext={handleCallNext}
           hasWaiting={waitingList.length > 0}
           loading={actionLoading}
+          isAutoCallEnabled={isAutoCallEnabled}
+          onToggleAutoCall={setIsAutoCallEnabled}
+          queuePaused={queueInfo?.status === "paused"}
         />
 
         {/* RIGHT: Tabs */}
