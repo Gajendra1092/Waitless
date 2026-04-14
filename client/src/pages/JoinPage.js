@@ -8,8 +8,8 @@ import {
   CardContent,
   TextField,
   Typography,
+  Button,
 } from '@mui/material';
-import { LoadingButton } from '@mui/lab';
 
 function JoinPage() {
   const { queueId } = useParams();
@@ -85,7 +85,7 @@ function JoinPage() {
                   onChange={(e) => setPhone(e.target.value)}
                   sx={{ mt: 2 }}
                 />
-                <LoadingButton
+              <Button
                   type="submit"
                   fullWidth
                   variant="contained"
@@ -93,7 +93,7 @@ function JoinPage() {
                   sx={{ mt: 3 }}
                 >
                   Join Queue
-                </LoadingButton>
+              </Button>
               </form>
             </CardContent>
           </>

@@ -364,5 +364,59 @@ router.get('/:queueId', async (req, res) => {
 //   }
 // });
 
+// ========================
+// ANALYTICS ROUTES
+// ========================
+router.get('/analytics/data', verifyToken, async (req, res) => {
+  try {
+    const businessId = req.businessId;
+    
+    // 1. Get all queues for this business
+    const queues = await Queue.find({ businessId });
+    const queueIds = queues.map(q => q._id);
+
+    if (queueIds.length === 0) {
+      return res.status(200).json({ totalCompleted: 0, totalSkipped: 0, avgWait: 0, weeklyTrend: [], queueDistribution: [] });
+    }
+
+    // 2. Today's Stats
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const totalCompleted = await Customer.countDocuments({ queueId: { $in: queueIds }, status: 'completed', servedAt: { $gte: startOfDay } });
+    const totalSkipped = await Customer.countDocuments({ queueId: { $in: queueIds }, status: 'skipped', updatedAt: { $gte: startOfDay } });
+    
+    // Calculate Average Wait Time for today (Difference between joinedAt and servedAt)
+    const completedToday = await Customer.find({ queueId: { $in: queueIds }, status: 'completed', servedAt: { $gte: startOfDay } });
+    let totalWaitTimeMs = 0;
+    completedToday.forEach(c => {
+      if (c.createdAt && c.servedAt) {
+        totalWaitTimeMs += (new Date(c.servedAt) - new Date(c.createdAt));
+      }
+    });
+    const avgWait = completedToday.length > 0 ? Math.round(totalWaitTimeMs / completedToday.length / 60000) : 0;
+
+    // 3. Weekly Trend (Last 7 Days)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const weeklyTrendRaw = await Customer.aggregate([
+      { $match: { queueId: { $in: queueIds }, status: 'completed', servedAt: { $gte: sevenDaysAgo } } },
+      { $group: { _id: { $dateToString: { format: "%m-%d", date: "$servedAt" } }, count: { $sum: 1 } } },
+      { $sort: { _id: 1 } }
+    ]);
+
+    // 4. Queue Distribution (Pie Chart)
+    const queueDistribution = await Promise.all(queues.map(async (q) => {
+        const count = await Customer.countDocuments({ queueId: q._id, status: 'completed', servedAt: { $gte: sevenDaysAgo }});
+        return { name: q.name, value: count };
+    }));
+
+    res.status(200).json({ totalCompleted, totalSkipped, avgWait, weeklyTrend: weeklyTrendRaw.map(w => ({ date: w._id, customers: w.count })), queueDistribution: queueDistribution.filter(q => q.value > 0) });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
 
 export default router;

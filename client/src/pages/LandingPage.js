@@ -5,7 +5,6 @@ import {
   Box, Typography, Button, TextField, Tab, Tabs,
   Grid, Card, CardContent, Chip, Alert, Stack, Paper,
 } from '@mui/material';
-import { LoadingButton } from '@mui/lab';
 import {
   BoltOutlined, QrCode2Outlined, TokenOutlined, DashboardOutlined,
   LockOutlined, BarChartOutlined, ArrowForward, PlayArrow,
@@ -571,11 +570,11 @@ function AuthSection({ demoFill }) {
                     placeholder="••••••••"
                     onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                   />
-                  <LoadingButton fullWidth variant="contained" size="large"
+                  <Button fullWidth variant="contained" size="large"
                     loading={loading} onClick={handleLogin}
                     sx={{ py: 1.4, mt: 0.5, borderRadius: 2 }}>
                     Login to Dashboard →
-                  </LoadingButton>
+                  </Button>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Box sx={{ flex: 1, height: '1px', background: 'rgba(0,229,255,0.1)' }} />
                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>or</Typography>
@@ -641,11 +640,11 @@ function AuthSection({ demoFill }) {
                       />
                     </Grid>
                   </Grid>
-                  <LoadingButton fullWidth variant="contained" size="large"
+                  <Button fullWidth variant="contained" size="large"
                     loading={loading} onClick={handleSignup}
                     sx={{ py: 1.4, mt: 0.5, borderRadius: 2 }}>
                     Create Business Account →
-                  </LoadingButton>
+                  </Button>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Box sx={{ flex: 1, height: '1px', background: 'rgba(0,229,255,0.1)' }} />
                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>or</Typography>

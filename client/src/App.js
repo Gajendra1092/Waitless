@@ -16,7 +16,7 @@ function App() {
       <Routes>
         <Route path="/join/:queueId" element={<JoinPage />} />
         <Route path="/status/:customerId" element={<QueueStatusPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/dashboard/*" element={<DashboardPage />} />
         <Route path="/dashboard/queue/:queueId" element={<QueueDetailsPage />} />
         <Route path="/display/:queueId" element={<DisplayPage />} />
         <Route path="/" element={<LandingPage />} />

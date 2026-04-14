@@ -60,6 +60,7 @@ import {
   Close as CloseIcon,
 } from "@mui/icons-material";
 import { socket } from "../socket";
+import AnalyticsPage from "./AnalyticsPage";
 
 // ========================
 // THEME
@@ -285,9 +286,9 @@ const Sidebar = ({ open, onClose, isMobile }) => {
   };
 
   const navItems = [
-    { label: "Queue", icon: <QueueIcon />, path: "/" },
-    { label: "Analytics", icon: <AnalyticsIcon />, path: "/analytics" },
-    { label: "Settings", icon: <SettingsIcon />, path: "/settings" },
+    { label: "Queue", icon: <QueueIcon />, path: "/dashboard" },
+    { label: "Analytics", icon: <AnalyticsIcon />, path: "/dashboard/analytics" },
+    { label: "Settings", icon: <SettingsIcon />, path: "/dashboard/settings" },
   ];
 
   const isActive = (path) => location.pathname === path;
@@ -1311,30 +1312,6 @@ const QueuePage = () => {
 };
 
 // ========================
-// ANALYTICS PAGE
-// ========================
-const AnalyticsPage = () => (
-  <Box
-    sx={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      height: "80vh",
-      flexDirection: "column",
-      gap: 2,
-    }}
-  >
-    <AnalyticsIcon sx={{ fontSize: 64, color: "#2a2a35" }} />
-    <Typography variant="h5" sx={{ color: "#8a8a8a", fontWeight: 600 }}>
-      Analytics
-    </Typography>
-    <Typography variant="body2" sx={{ color: "#555" }}>
-      Coming Soon
-    </Typography>
-  </Box>
-);
-
-// ========================
 // SETTINGS PAGE
 // ========================
 const SettingsPage = () => (
@@ -1411,8 +1388,8 @@ const App = () => {
           <Box sx={{ flexGrow: 1, overflow: "auto" }}>
             <Routes>
               <Route path="/" element={<QueuePage />} />
-              <Route path="/analytics" element={<AnalyticsPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="analytics" element={<AnalyticsPage />} />
+              <Route path="settings" element={<SettingsPage />} />
             </Routes>
           </Box>
         </Box>
