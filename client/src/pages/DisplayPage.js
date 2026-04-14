@@ -121,9 +121,6 @@ function DisplayPage() {
               {queue.name}
             </Typography>
             <LiveClock />
-            <Typography variant="body2" sx={{ ml: 'auto' }}>
-              Scan QR to join
-            </Typography>
           </Toolbar>
         </AppBar>
 
@@ -174,7 +171,14 @@ function DisplayPage() {
             <Typography>Waiting: {stats.waiting}</Typography>
             <Typography>Avg. Wait: {stats.avgWait} mins</Typography>
           </Box>
-          <QRCodeSVG value={joinUrl} size={80} fgColor="white" bgColor="transparent" />
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              Scan QR to join
+            </Typography>
+            <Box sx={{ p: 1, bgcolor: 'white', borderRadius: 1, display: 'flex' }}>
+              <QRCodeSVG value={joinUrl} size={100} fgColor="#000000" bgColor="#ffffff" />
+            </Box>
+          </Box>
         </Box>
       </Box>
       <Snackbar

@@ -46,6 +46,20 @@ import {
   Timer as TimerIcon,
   Person as PersonIcon,
 } from "@mui/icons-material";
+import { socket } from "../socket";
+
+const api = axios.create({
+  baseURL: process.env.REACT_APP_SERVER_URL,
+});
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers = config.headers || {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 // ========================
 // MOCK DATA
@@ -89,7 +103,6 @@ const MOCK_COMPLETED = [
   { _id: "d5", token: 41, name: "Arjun Menon", phone: "+91-9876543225", completedAt: "11:01 AM" },
 ];
 
-const WS_URL = "ws://localhost:8080/queue-updates";
 const ROWS_PER_PAGE = 5;
 
 // ========================
@@ -172,7 +185,7 @@ const StatCard = ({ icon, label, value, color, delay }) => (
 // ========================
 // CURRENTLY SERVING
 // ========================
-const CurrentlyServing = ({ customer, onComplete, onSkip, loading }) => {
+const CurrentlyServing = ({ customer, onComplete, onSkip, onCallNext, hasWaiting, loading }) => {
   if (!customer) {
     return (
       <Fade in timeout={500}>
@@ -197,8 +210,18 @@ const CurrentlyServing = ({ customer, onComplete, onSkip, loading }) => {
             No one being served
           </Typography>
           <Typography variant="caption" sx={{ color: COLORS.textDim }}>
-            Waiting for the next customer
+            {hasWaiting ? "Calling next customer..." : "Waiting for the next customer"}
           </Typography>
+          {hasWaiting && (
+            <Button
+              variant="contained"
+              onClick={onCallNext}
+              disabled={loading}
+              sx={{ mt: 3, bgcolor: COLORS.blue, color: COLORS.white, fontWeight: 600, px: 3, "&:hover": { bgcolor: "#2563eb" } }}
+            >
+              Call Next Manually
+            </Button>
+          )}
         </Paper>
       </Fade>
     );
@@ -255,7 +278,7 @@ const CurrentlyServing = ({ customer, onComplete, onSkip, loading }) => {
             fontSize: { xs: "3.5rem", md: "4.5rem" },
           }}
         >
-          {customer.token}
+          {customer.tokenNumber || customer.token}
         </Typography>
 
         <Typography variant="body1" sx={{ color: COLORS.text, fontWeight: 500, mb: 0.5 }}>
@@ -354,13 +377,13 @@ const QueueDetailsPage = () => {
   const [completedPage, setCompletedPage] = useState(1);
   const [completedTotalPages, setCompletedTotalPages] = useState(1);
 
-  const wsRef = useRef(null);
+  const autoCallInProgress = useRef(false);
 
   // ---- FETCH ----
   const fetchQueueDetails = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get(`/api/queue/${queueId}/details`);
+      const { data } = await api.get(`/api/queue/${queueId}/details`);
       setQueueInfo(data.queue || data.queueInfo);
       setStats(data.stats);
       setCurrentCustomer(data.currentCustomer || data.stats?.currentlyServing || null);
@@ -375,7 +398,7 @@ const QueueDetailsPage = () => {
 
   const fetchWaitingList = useCallback(async () => {
     try {
-      const { data } = await axios.get(`/api/queue/${queueId}/waiting`, {
+      const { data } = await api.get(`/api/queue/${queueId}/waiting`, {
         params: { page: waitingPage, limit: ROWS_PER_PAGE },
       });
       setWaitingList(data.customers || data);
@@ -390,7 +413,7 @@ const QueueDetailsPage = () => {
 
   const fetchSkippedList = useCallback(async () => {
     try {
-      const { data } = await axios.get(`/api/queue/${queueId}/skipped`, {
+      const { data } = await api.get(`/api/queue/${queueId}/skipped`, {
         params: { page: skippedPage, limit: ROWS_PER_PAGE },
       });
       setSkippedList(data.customers || data);
@@ -405,7 +428,7 @@ const QueueDetailsPage = () => {
 
   const fetchCompletedList = useCallback(async () => {
     try {
-      const { data } = await axios.get(`/api/queue/${queueId}/completed`, {
+      const { data } = await api.get(`/api/queue/${queueId}/completed`, {
         params: { page: completedPage, limit: ROWS_PER_PAGE },
       });
       setCompletedList(data.customers || data);
@@ -425,46 +448,75 @@ const QueueDetailsPage = () => {
 
   // ---- WEBSOCKET ----
   useEffect(() => {
-    const connectWS = () => {
-      try {
-        wsRef.current = new WebSocket(`${WS_URL}?queueId=${queueId}`);
-        wsRef.current.onopen = () => console.log("QueueDetails WS connected");
-        wsRef.current.onmessage = (event) => {
-          try {
-            const msg = JSON.parse(event.data);
-            switch (msg.type) {
-              case "STATS_UPDATE": setStats(msg.stats); break;
-              case "CURRENT_CUSTOMER_UPDATE": setCurrentCustomer(msg.customer); break;
-              case "WAITING_LIST_UPDATE": fetchWaitingList(); break;
-              case "SKIPPED_LIST_UPDATE": if (activeTab === 1) fetchSkippedList(); break;
-              case "COMPLETED_LIST_UPDATE": if (activeTab === 2) fetchCompletedList(); break;
-              case "FULL_REFRESH":
-                fetchQueueDetails(); fetchWaitingList();
-                if (activeTab === 1) fetchSkippedList();
-                if (activeTab === 2) fetchCompletedList();
-                break;
-              default: break;
-            }
-          } catch (e) { console.error("WS parse error:", e); }
-        };
-        wsRef.current.onerror = (err) => console.error("WS error:", err);
-        wsRef.current.onclose = () => {
-          console.log("WS disconnected. Reconnecting in 5s...");
-          setTimeout(connectWS, 5000);
-        };
-      } catch (err) { console.error("WS connection failed:", err); }
+    if (queueId) {
+      socket.connect();
+      socket.emit('join-queue-room', queueId);
+
+      const handleQueueUpdate = () => {
+        fetchQueueDetails();
+        fetchWaitingList();
+        if (activeTab === 1) fetchSkippedList();
+        if (activeTab === 2) fetchCompletedList();
+      };
+
+      socket.on('queue-updated', handleQueueUpdate);
+
+      return () => {
+        socket.off('queue-updated', handleQueueUpdate);
+        socket.disconnect();
+      };
     };
-    connectWS();
-    return () => { if (wsRef.current) wsRef.current.close(); };
   }, [queueId, activeTab, fetchWaitingList, fetchSkippedList, fetchCompletedList, fetchQueueDetails]);
+
+  // ---- AUTO CALL NEXT ----
+  const handleCallNext = useCallback(async () => {
+    if (waitingList.length === 0) return;
+    const nextCustomer = waitingList[0];
+    setActionLoading(true);
+    try {
+      await api.patch(`/api/customer/${nextCustomer._id}/call`);
+      setSnackbar({
+        open: true,
+        message: `Token #${nextCustomer.tokenNumber || nextCustomer.token} (${nextCustomer.name}) called to counter`,
+        severity: "success",
+      });
+      fetchQueueDetails();
+      fetchWaitingList();
+    } catch (err) {
+      console.error("Call next failed:", err.message);
+      setSnackbar({ open: true, message: "Failed to call next. Try again.", severity: "error" });
+    }
+    setActionLoading(false);
+  }, [waitingList, fetchQueueDetails, fetchWaitingList]);
+
+  useEffect(() => {
+    const autoCall = async () => {
+      if (
+        queueInfo &&
+        queueInfo.status !== "paused" &&
+        !currentCustomer &&
+        waitingList.length > 0 &&
+        !autoCallInProgress.current
+      ) {
+        autoCallInProgress.current = true;
+        await handleCallNext();
+        
+        // Small timeout to prevent race conditions with WebSocket updates
+        setTimeout(() => {
+          autoCallInProgress.current = false;
+        }, 1500);
+      }
+    };
+    autoCall();
+  }, [queueInfo, currentCustomer, waitingList, handleCallNext]);
 
   // ---- ACTIONS ----
   const handleComplete = async () => {
     if (!currentCustomer) return;
     setActionLoading(true);
     try {
-      await axios.post(`/api/queue/${queueId}/complete`, { customerId: currentCustomer._id || currentCustomer.token });
-      setSnackbar({ open: true, message: `Token #${currentCustomer.token} marked as complete`, severity: "success" });
+      await api.post(`/api/queue/${queueId}/complete`, { customerId: currentCustomer._id || currentCustomer.tokenNumber || currentCustomer.token });
+      setSnackbar({ open: true, message: `Token #${currentCustomer.tokenNumber || currentCustomer.token} marked as complete`, severity: "success" });
       fetchQueueDetails(); fetchWaitingList();
       if (activeTab === 2) fetchCompletedList();
     } catch (err) {
@@ -490,8 +542,8 @@ const QueueDetailsPage = () => {
     setSkipDialog({ open: false, customer: null, type: "" });
     try {
       const endpoint = type === "current" ? `/api/queue/${queueId}/skip-current` : `/api/queue/${queueId}/skip`;
-      await axios.post(endpoint, { customerId: customer._id || customer.token });
-      setSnackbar({ open: true, message: `Token #${customer.token} (${customer.name}) skipped`, severity: "info" });
+      await api.post(endpoint, { customerId: customer._id || customer.tokenNumber || customer.token });
+      setSnackbar({ open: true, message: `Token #${customer.tokenNumber || customer.token} (${customer.name}) skipped`, severity: "info" });
       fetchQueueDetails(); fetchWaitingList();
       if (activeTab === 1) fetchSkippedList();
     } catch (err) {
@@ -506,8 +558,8 @@ const QueueDetailsPage = () => {
   const handleUndoSkip = async (customer) => {
     setActionLoading(true);
     try {
-      await axios.post(`/api/queue/${queueId}/undo-skip`, { customerId: customer._id || customer.token });
-      setSnackbar({ open: true, message: `Token #${customer.token} (${customer.name}) added back to queue`, severity: "success" });
+      await api.post(`/api/queue/${queueId}/undo-skip`, { customerId: customer._id || customer.tokenNumber || customer.token });
+      setSnackbar({ open: true, message: `Token #${customer.tokenNumber || customer.token} (${customer.name}) added back to queue`, severity: "success" });
       fetchSkippedList(); fetchWaitingList(); fetchQueueDetails();
     } catch (err) {
       console.error("Undo skip failed:", err.message);
@@ -606,7 +658,7 @@ const QueueDetailsPage = () => {
         <StatCard
           icon={<PersonIcon />}
           label="Currently Serving"
-          value={currentCustomer ? `${currentCustomer.name?.split(" ")[0]} (#${currentCustomer.token})` : "None"}
+          value={currentCustomer ? `${currentCustomer.name?.split(" ")[0]} (#${currentCustomer.tokenNumber || currentCustomer.token})` : "None"}
           color={COLORS.green}
           delay={100}
         />
@@ -628,6 +680,8 @@ const QueueDetailsPage = () => {
           customer={currentCustomer}
           onComplete={handleComplete}
           onSkip={handleSkipCurrentOpen}
+          onCallNext={handleCallNext}
+          hasWaiting={waitingList.length > 0}
           loading={actionLoading}
         />
 
@@ -696,7 +750,7 @@ const QueueDetailsPage = () => {
                                   {c.position || (waitingPage - 1) * ROWS_PER_PAGE + idx + 1}
                                 </Typography>
                               </TableCell>
-                              <TableCell><TokenChip token={c.token} /></TableCell>
+                              <TableCell><TokenChip token={c.tokenNumber || c.token} /></TableCell>
                               <TableCell>
                                 <Typography variant="body2" sx={{ color: COLORS.text, fontWeight: 500 }}>{c.name}</Typography>
                               </TableCell>
@@ -756,7 +810,7 @@ const QueueDetailsPage = () => {
                         skippedList.map((c, idx) => (
                           <Fade in timeout={300 + idx * 80} key={c._id || idx}>
                             <TableRow sx={{ "&:hover": { bgcolor: COLORS.paperLight }, transition: "background-color 0.15s" }}>
-                              <TableCell><TokenChip token={c.token} color={COLORS.amber} /></TableCell>
+                              <TableCell><TokenChip token={c.tokenNumber || c.token} color={COLORS.amber} /></TableCell>
                               <TableCell>
                                 <Typography variant="body2" sx={{ color: COLORS.text, fontWeight: 500 }}>{c.name}</Typography>
                               </TableCell>
@@ -816,7 +870,7 @@ const QueueDetailsPage = () => {
                         completedList.map((c, idx) => (
                           <Fade in timeout={300 + idx * 80} key={c._id || idx}>
                             <TableRow sx={{ "&:hover": { bgcolor: COLORS.paperLight }, transition: "background-color 0.15s" }}>
-                              <TableCell><TokenChip token={c.token} color={COLORS.purple} /></TableCell>
+                              <TableCell><TokenChip token={c.tokenNumber || c.token} color={COLORS.purple} /></TableCell>
                               <TableCell>
                                 <Typography variant="body2" sx={{ color: COLORS.text, fontWeight: 500 }}>{c.name}</Typography>
                               </TableCell>
@@ -863,7 +917,7 @@ const QueueDetailsPage = () => {
         <DialogContent>
           <DialogContentText sx={{ color: COLORS.textMuted }}>
             Are you sure you want to skip{" "}
-            <strong style={{ color: COLORS.text }}>Token #{skipDialog.customer?.token} ({skipDialog.customer?.name})</strong>?
+            <strong style={{ color: COLORS.text }}>Token #{skipDialog.customer?.tokenNumber || skipDialog.customer?.token} ({skipDialog.customer?.name})</strong>?
             {skipDialog.type === "current"
               ? " The next person in queue will be called."
               : " This customer will be moved to the skipped list."}

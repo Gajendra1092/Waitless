@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 
 const statusColors = {
   waiting: 'warning',
@@ -113,6 +114,22 @@ function QueueStatusPage() {
                 </Typography>
                 <Typography variant="h6" sx={{ mt: 1, color: 'text.secondary' }}>
                     Thank you for using WaitLess!
+                </Typography>
+            </CardContent>
+        </Card>
+    );
+  }
+
+  if (customer.status === 'skipped') {
+    return (
+        <Card sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+            <CardContent>
+                <ErrorOutlineIcon sx={{ fontSize: 80, color: 'error.main' }} />
+                <Typography variant="h3" component="div" sx={{ fontWeight: 'bold', mt: 2 }}>
+                    You Were Skipped
+                </Typography>
+                <Typography variant="h6" sx={{ mt: 1, color: 'text.secondary' }}>
+                    Please contact the counter for assistance.
                 </Typography>
             </CardContent>
         </Card>

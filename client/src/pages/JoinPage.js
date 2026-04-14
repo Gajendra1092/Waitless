@@ -38,13 +38,14 @@ function JoinPage() {
     if (!name) {
       return;
     }
+    
     setLoading(true);
     try {
       const response = await axios.post(`/api/customer/${queueId}/join`, {
         name,
         phone,
       });
-      const { customerId } = response.data;
+      const customerId = response.data._id;
       navigate(`/status/${customerId}`);
     } catch (err) {
       setError('Failed to join the queue.');

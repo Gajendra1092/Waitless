@@ -59,6 +59,7 @@ import {
   ChevronLeft as ChevronLeftIcon,
   Close as CloseIcon,
 } from "@mui/icons-material";
+import { socket } from "../socket";
 
 // ========================
 // THEME
@@ -162,7 +163,6 @@ const darkTheme = createTheme({
 });
 
 const DRAWER_WIDTH = 240;
-const WS_URL = "ws://localhost:8080/queue-updates";
 
 const api = axios.create({
   baseURL: process.env.REACT_APP_SERVER_URL,
@@ -503,8 +503,6 @@ const QueuePage = () => {
     message: "",
     severity: "success",
   });
-  const wsRef = useRef(null);
-  const reconnectTimeoutRef = useRef(null);
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createForm, setCreateForm] = useState({
@@ -589,58 +587,25 @@ const QueuePage = () => {
     fetchQueues();
   }, [fetchQueues]);
 
+  const queueIds = queues.map((q) => q.id).join(',');
+
   useEffect(() => {
-    const connectWebSocket = () => {
-      try {
-        wsRef.current = new WebSocket(WS_URL);
+    if (!queueIds) return;
 
-        wsRef.current.onopen = () => {
-          console.log("WebSocket connected");
-        };
+    socket.connect();
+    const ids = queueIds.split(',');
+    ids.forEach((id) => socket.emit('join-queue-room', id));
 
-        wsRef.current.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            if (data.queueId && typeof data.customers === "number") {
-              setQueues((prev) =>
-                prev.map((q) => {
-                  if (q.id === data.queueId) {
-                    const newStatus = getStatusFromCount(data.customers, q.status);
-                    return { ...q, customers: data.customers, status: newStatus };
-                  }
-                  return q;
-                })
-              );
-            }
-          } catch (e) {
-            console.error("WebSocket message parse error:", e);
-          }
-        };
-
-        wsRef.current.onerror = (error) => {
-          console.error("WebSocket error:", error);
-        };
-
-        wsRef.current.onclose = () => {
-          console.log("WebSocket disconnected. Reconnecting in 5s...");
-          reconnectTimeoutRef.current = setTimeout(connectWebSocket, 5000);
-        };
-      } catch (err) {
-        console.error("WebSocket connection failed:", err);
-      }
+    const handleQueueUpdate = () => {
+      fetchQueues();
     };
 
-    connectWebSocket();
+    socket.on('queue-updated', handleQueueUpdate);
 
     return () => {
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
+      socket.off('queue-updated', handleQueueUpdate);
     };
-  }, []);
+  }, [queueIds, fetchQueues]);
 
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);

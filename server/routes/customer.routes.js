@@ -35,6 +35,7 @@ router.post('/:queueId/join', async (req, res) => {
     });
 
     await newCustomer.save();
+    req.io.to(req.params.queueId).emit('queue-updated');
     res.status(201).json(newCustomer);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

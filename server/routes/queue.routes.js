@@ -22,7 +22,7 @@ router.post('/create',verifyToken, async (req, res) => {
   }
 });
 
-router.get('/:queueId/customers',verifyToken, async (req, res) => {
+router.get('/:queueId/customers', async (req, res) => {
   try {
     const customers = await Customer.find({ queueId: req.params.queueId }).sort({ position: 1 });
     res.status(200).json(customers);
@@ -133,6 +133,188 @@ router.patch('/pause/:queueId', verifyToken, async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
+
+//QueueDetailsPage APIS
+router.get('/:queueId/details', verifyToken, async (req, res) => {
+  try {
+    const queueId = req.params.queueId;
+    const queue = await Queue.findById(queueId);
+    if (!queue) {
+      return res.status(404).json({ message: 'Queue not found' });
+    }
+
+    const totalWaiting = await Customer.countDocuments({ queueId, status: 'waiting' });
+    const currentCustomer = await Customer.findOne({ queueId, status: 'serving' });
+    
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const completedToday = await Customer.countDocuments({
+      queueId,
+      status: 'completed',
+      servedAt: { $gte: startOfDay }
+    });
+
+    res.status(200).json({
+      queue,
+      stats: {
+        totalWaiting,
+        currentlyServing: currentCustomer,
+        avgWait: queue.avgServiceTime || 0,
+        completedToday
+      },
+      currentCustomer
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+router.get('/:queueId/waiting', verifyToken, async (req, res) => {
+  try {
+    const { page = 1, limit = 5 } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
+    const customers = await Customer.find({ queueId: req.params.queueId, status: 'waiting' })
+      .sort({ position: 1 })
+      .skip(skip)
+      .limit(Number(limit));
+    const total = await Customer.countDocuments({ queueId: req.params.queueId, status: 'waiting' });
+    
+    res.status(200).json({ customers, total, totalPages: Math.ceil(total / Number(limit)) });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+router.get('/:queueId/skipped', verifyToken, async (req, res) => {
+  try {
+    const { page = 1, limit = 5 } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
+    const customers = await Customer.find({ queueId: req.params.queueId, status: 'skipped' })
+      .sort({ updatedAt: -1 })
+      .skip(skip)
+      .limit(Number(limit));
+    const total = await Customer.countDocuments({ queueId: req.params.queueId, status: 'skipped' });
+    
+    res.status(200).json({ customers, total, totalPages: Math.ceil(total / Number(limit)) });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+router.get('/:queueId/completed', verifyToken, async (req, res) => {
+  try {
+    const { page = 1, limit = 5 } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
+    const customers = await Customer.find({ queueId: req.params.queueId, status: 'completed' })
+      .sort({ servedAt: -1 })
+      .skip(skip)
+      .limit(Number(limit));
+    const total = await Customer.countDocuments({ queueId: req.params.queueId, status: 'completed' });
+    
+    res.status(200).json({ customers, total, totalPages: Math.ceil(total / Number(limit)) });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+router.post('/:queueId/complete', verifyToken, async (req, res) => {
+  try {
+    const { customerId } = req.body;
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(customerId);
+    const query = { queueId: req.params.queueId, ...(isObjectId ? { _id: customerId } : { tokenNumber: customerId }) };
+    
+    const customer = await Customer.findOne(query);
+    if (!customer) return res.status(404).json({ message: 'Customer not found' });
+
+    customer.status = 'completed';
+    customer.servedAt = new Date();
+    await customer.save();
+
+    req.io.to(req.params.queueId).emit('queue-updated');
+
+    res.status(200).json({ message: 'Marked as completed', customer });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+router.post('/:queueId/skip-current', verifyToken, async (req, res) => {
+  try {
+    const { customerId } = req.body;
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(customerId);
+    const query = { queueId: req.params.queueId, ...(isObjectId ? { _id: customerId } : { tokenNumber: customerId }) };
+    
+    const customer = await Customer.findOne(query);
+    if (!customer) return res.status(404).json({ message: 'Customer not found' });
+
+    customer.status = 'skipped';
+    await customer.save();
+
+    req.io.to(req.params.queueId).emit('queue-updated');
+
+    res.status(200).json({ message: 'Current customer skipped', customer });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+router.post('/:queueId/skip', verifyToken, async (req, res) => {
+  try {
+    const { customerId } = req.body;
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(customerId);
+    const query = { queueId: req.params.queueId, ...(isObjectId ? { _id: customerId } : { tokenNumber: customerId }) };
+    
+    const customer = await Customer.findOne(query);
+    if (!customer) return res.status(404).json({ message: 'Customer not found' });
+
+    customer.status = 'skipped';
+    await customer.save();
+
+    // Decrement position of subsequent waiting customers
+    await Customer.updateMany(
+      {
+        queueId: req.params.queueId,
+        status: 'waiting',
+        position: { $gt: customer.position },
+      },
+      { $inc: { position: -1 } }
+    );
+
+    req.io.to(req.params.queueId).emit('queue-updated');
+
+    res.status(200).json({ message: 'Customer skipped', customer });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+router.post('/:queueId/undo-skip', verifyToken, async (req, res) => {
+  try {
+    const { customerId } = req.body;
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(customerId);
+    const query = { queueId: req.params.queueId, ...(isObjectId ? { _id: customerId } : { tokenNumber: customerId }) };
+    
+    const customer = await Customer.findOne(query);
+    if (!customer) return res.status(404).json({ message: 'Customer not found' });
+
+    // Append them back to the end of the queue
+    const lastCustomer = await Customer.findOne({ queueId: req.params.queueId, status: 'waiting' }).sort({ position: -1 });
+    const newPosition = lastCustomer ? lastCustomer.position + 1 : 1;
+
+    customer.status = 'waiting';
+    customer.position = newPosition;
+    await customer.save();
+
+    req.io.to(req.params.queueId).emit('queue-updated');
+
+    res.status(200).json({ message: 'Undo skip successful', customer });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Display Routes
+
 
 
 //Public Routes
