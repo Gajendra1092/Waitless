@@ -9,12 +9,42 @@ import {
   Analytics as AnalyticsIcon,
   AutoGraph as AutoGraphIcon,
   Lightbulb as LightbulbIcon,
+  DoneAll as DoneAllIcon,
+  SkipNext as SkipNextIcon,
+  Timer as TimerIcon,
 } from "@mui/icons-material";
 import {
   LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend
 } from 'recharts';
 import api from "../utils/api";
+import StatCard from "../components/StatCard";
+
+// ========================
+// STYLES
+// ========================
+const styles = {
+  loaderContainer: { display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" },
+  loader: { color: "#00E5FF" },
+  pageContainer: { p: { xs: 2, md: 4 }, maxWidth: 1400, mx: "auto" },
+  pageTitle: { fontWeight: 700, color: "#ffffff", mb: 4, display: "flex", alignItems: "center", gap: 1.5 },
+  titleIcon: { color: "#00E5FF", fontSize: 32 },
+  kpiGrid: { display: "flex", gap: 2, mb: 4, flexWrap: "wrap" },
+  insightsCard: { bgcolor: "#1a1a24", border: "1px solid #7B61FF50", p: 3, borderRadius: "12px", mb: 4, position: "relative", overflow: "hidden" },
+  insightsGlow: { position: "absolute", top: -50, right: -50, width: 150, height: 150, background: "radial-gradient(circle, rgba(123,97,255,0.15) 0%, transparent 70%)", borderRadius: "50%" },
+  insightsTitle: { color: "#ffffff", fontWeight: 600, mb: 2, display: "flex", alignItems: "center", gap: 1 },
+  insightsTitleIcon: { color: "#7B61FF" },
+  insightsList: { display: "flex", flexDirection: "column", gap: 1.5 },
+  insightItem: (type) => ({ display: "flex", alignItems: "flex-start", gap: 1.5, p: 2, bgcolor: "#111118", borderRadius: "8px", borderLeft: `3px solid ${type === "warning" ? "#f59e0b" : type === "success" ? "#00FF94" : "#00E5FF"}` }),
+  insightIcon: { color: "#8a8a8a", fontSize: 20, mt: 0.2 },
+  insightText: { color: "#e0e0e0", lineHeight: 1.6 },
+  chartsGrid: { display: "grid", gridTemplateColumns: { xs: "1fr", lg: "2fr 1fr" }, gap: 3 },
+  chartCard: { bgcolor: "#16161e", border: "1px solid #2a2a35", p: 3, borderRadius: "12px" },
+  chartTitle: { color: "#ffffff", fontWeight: 600, mb: 3 },
+  chartWrapper: { width: "100%", height: 300 },
+  noDataWrapper: { height: 300, display: "flex", alignItems: "center", justifyContent: "center" },
+  noDataText: { color: "#8a8a8a" },
+};
 
 const AnalyticsPage = () => {
   const [data, setData] = useState(null);
@@ -66,8 +96,8 @@ const AnalyticsPage = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
-        <CircularProgress sx={{ color: "#00E5FF" }} />
+      <Box sx={styles.loaderContainer}>
+        <CircularProgress sx={styles.loader} />
       </Box>
     );
   }
@@ -75,48 +105,41 @@ const AnalyticsPage = () => {
   const insights = getInsights();
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 1400, mx: "auto" }}>
-      <Typography variant="h4" sx={{ fontWeight: 700, color: "#ffffff", mb: 4, display: "flex", alignItems: "center", gap: 1.5 }}>
-        <AnalyticsIcon sx={{ color: "#00E5FF", fontSize: 32 }} /> Analytics Overview
+    <Box sx={styles.pageContainer}>
+      <Typography variant="h4" sx={styles.pageTitle}>
+        <AnalyticsIcon sx={styles.titleIcon} /> Analytics Overview
       </Typography>
 
       {/* KPI Cards */}
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" }, gap: 3, mb: 4 }}>
-        {[
-          { label: "Served Today", value: data.totalCompleted, color: "#00FF94" },
-          { label: "Skipped Today", value: data.totalSkipped, color: "#ef4444" },
-          { label: "Avg Wait (Mins)", value: data.avgWait, color: "#00E5FF" }
-        ].map((stat, idx) => (
-          <Paper key={idx} sx={{ bgcolor: "#16161e", border: "1px solid #2a2a35", p: 3, borderRadius: "12px", borderTop: `4px solid ${stat.color}` }}>
-            <Typography variant="caption" sx={{ color: "#8a8a8a", fontWeight: 600, textTransform: "uppercase" }}>{stat.label}</Typography>
-            <Typography variant="h3" sx={{ color: "#ffffff", fontWeight: 800, mt: 1 }}>{stat.value}</Typography>
-          </Paper>
-        ))}
+      <Box sx={styles.kpiGrid}>
+        <StatCard icon={<DoneAllIcon />} label="Served Today" value={data.totalCompleted} color="#00FF94" delay={0} />
+        <StatCard icon={<SkipNextIcon />} label="Skipped Today" value={data.totalSkipped} color="#ef4444" delay={100} />
+        <StatCard icon={<TimerIcon />} label="Avg Wait (Mins)" value={data.avgWait} color="#00E5FF" delay={200} />
       </Box>
 
       {/* Smart Insights (AI Placeholder) */}
-      <Paper sx={{ bgcolor: "#1a1a24", border: "1px solid #7B61FF50", p: 3, borderRadius: "12px", mb: 4, position: "relative", overflow: "hidden" }}>
-        <Box sx={{ position: "absolute", top: -50, right: -50, width: 150, height: 150, background: "radial-gradient(circle, rgba(123,97,255,0.15) 0%, transparent 70%)", borderRadius: "50%" }} />
-        <Typography variant="h6" sx={{ color: "#ffffff", fontWeight: 600, mb: 2, display: "flex", alignItems: "center", gap: 1 }}>
-          <LightbulbIcon sx={{ color: "#7B61FF" }} /> Smart Insights
+      <Paper sx={styles.insightsCard}>
+        <Box sx={styles.insightsGlow} />
+        <Typography variant="h6" sx={styles.insightsTitle}>
+          <LightbulbIcon sx={styles.insightsTitleIcon} /> Smart Insights
         </Typography>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+        <Box sx={styles.insightsList}>
           {insights.map((insight, idx) => (
-            <Box key={idx} sx={{ display: "flex", alignItems: "flex-start", gap: 1.5, p: 2, bgcolor: "#111118", borderRadius: "8px", borderLeft: `3px solid ${insight.type === "warning" ? "#f59e0b" : insight.type === "success" ? "#00FF94" : "#00E5FF"}` }}>
-              <AutoGraphIcon sx={{ color: "#8a8a8a", fontSize: 20, mt: 0.2 }} />
-              <Typography variant="body2" sx={{ color: "#e0e0e0", lineHeight: 1.6 }}>{insight.text}</Typography>
+            <Box key={idx} sx={styles.insightItem(insight.type)}>
+              <AutoGraphIcon sx={styles.insightIcon} />
+              <Typography variant="body2" sx={styles.insightText}>{insight.text}</Typography>
             </Box>
           ))}
         </Box>
       </Paper>
 
       {/* Charts Grid */}
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "2fr 1fr" }, gap: 3 }}>
+      <Box sx={styles.chartsGrid}>
         
         {/* Line Chart */}
-        <Paper sx={{ bgcolor: "#16161e", border: "1px solid #2a2a35", p: 3, borderRadius: "12px" }}>
-          <Typography variant="subtitle1" sx={{ color: "#ffffff", fontWeight: 600, mb: 3 }}>Weekly Traffic Trend</Typography>
-          <Box sx={{ width: "100%", height: 300 }}>
+        <Paper sx={styles.chartCard}>
+          <Typography variant="subtitle1" sx={styles.chartTitle}>Weekly Traffic Trend</Typography>
+          <Box sx={styles.chartWrapper}>
             <ResponsiveContainer>
               <LineChart data={data.weeklyTrend}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#2a2a35" vertical={false} />
@@ -133,10 +156,10 @@ const AnalyticsPage = () => {
         </Paper>
 
         {/* Pie Chart */}
-        <Paper sx={{ bgcolor: "#16161e", border: "1px solid #2a2a35", p: 3, borderRadius: "12px" }}>
-          <Typography variant="subtitle1" sx={{ color: "#ffffff", fontWeight: 600, mb: 3 }}>Traffic by Queue</Typography>
+        <Paper sx={styles.chartCard}>
+          <Typography variant="subtitle1" sx={styles.chartTitle}>Traffic by Queue</Typography>
           {data.queueDistribution.length > 0 ? (
-            <Box sx={{ width: "100%", height: 300 }}>
+            <Box sx={styles.chartWrapper}>
               <ResponsiveContainer>
                 <PieChart>
                   <Pie data={data.queueDistribution} cx="50%" cy="45%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none">
@@ -150,8 +173,8 @@ const AnalyticsPage = () => {
               </ResponsiveContainer>
             </Box>
           ) : (
-            <Box sx={{ height: 300, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Typography variant="body2" sx={{ color: "#8a8a8a" }}>Not enough data yet</Typography>
+            <Box sx={styles.noDataWrapper}>
+              <Typography variant="body2" sx={styles.noDataText}>Not enough data yet</Typography>
             </Box>
           )}
         </Paper>
