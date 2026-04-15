@@ -16,6 +16,7 @@ import AnalyticsPage from "./AnalyticsPage";
 import Sidebar from "../components/Sidebar";
 import QueuePage from "./QueuePage";
 import SettingsPage from "./SettingsPage";
+import QueueDetailsPage from "./QueueDetailsPage";
 
 // THEME
 
@@ -189,6 +190,7 @@ const DashboardPage = () => {
               <Route path="/" element={<QueuePage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="queue/:queueId" element={<QueueDetailsPage />} />
             </Routes>
           </Box>
         </Box>
