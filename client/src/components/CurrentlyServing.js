@@ -13,22 +13,10 @@ import {
   SkipNext as SkipNextIcon,
 } from "@mui/icons-material";
 
-const COLORS = {
-  paper: "#16161e",
-  border: "#2a2a35",
-  textMuted: "#8a8a8a",
-  textDim: "#555555",
-  white: "#ffffff",
-  green: "#22c55e",
-  blue: "#3b82f6",
-  amber: "#f59e0b",
-  borderLight: "#3a3a45",
-};
-
 const CurrentlyServing = ({ customer, onComplete, onSkip, onCallNext, hasWaiting, loading, isAutoCallEnabled, onToggleAutoCall, queuePaused }) => {
   const autoCallToggle = (
     <Box sx={{ position: "absolute", top: 16, right: 16, display: "flex", alignItems: "center", gap: 1, zIndex: 10 }}>
-      <Typography variant="caption" sx={{ color: isAutoCallEnabled ? COLORS.green : COLORS.textMuted, fontWeight: 600 }}>
+      <Typography variant="caption" sx={{ color: isAutoCallEnabled ? 'success.main' : 'text.secondary', fontWeight: 600 }}>
         Auto-Call
       </Typography>
       <Switch
@@ -36,8 +24,8 @@ const CurrentlyServing = ({ customer, onComplete, onSkip, onCallNext, hasWaiting
         checked={isAutoCallEnabled}
         onChange={(e) => onToggleAutoCall(e.target.checked)}
         sx={{
-          "& .MuiSwitch-switchBase.Mui-checked": { color: COLORS.green },
-          "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { bgcolor: COLORS.green },
+          "& .MuiSwitch-switchBase.Mui-checked": { color: 'success.main' },
+          "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { bgcolor: 'success.main' },
         }}
       />
     </Box>
@@ -49,9 +37,11 @@ const CurrentlyServing = ({ customer, onComplete, onSkip, onCallNext, hasWaiting
         <Paper
           elevation={0}
           sx={{
-            bgcolor: COLORS.paper,
-            border: `1px solid ${COLORS.border}`,
-            borderLeft: `4px solid ${COLORS.border}`,
+            bgcolor: 'background.paper',
+            border: 1,
+            borderColor: 'divider',
+            borderLeft: 4,
+            borderLeftColor: 'divider',
             borderRadius: "12px",
             p: 4,
             display: "flex",
@@ -64,11 +54,11 @@ const CurrentlyServing = ({ customer, onComplete, onSkip, onCallNext, hasWaiting
           }}
         >
           {autoCallToggle}
-          <PersonOffIcon sx={{ fontSize: 56, color: COLORS.border, mb: 2 }} />
-          <Typography variant="h6" sx={{ color: COLORS.textMuted, fontWeight: 600, mb: 0.5 }}>
+          <PersonOffIcon sx={{ fontSize: 56, color: 'divider', mb: 2 }} />
+          <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: 600, mb: 0.5 }}>
             No one being served
           </Typography>
-          <Typography variant="caption" sx={{ color: COLORS.textDim }}>
+          <Typography variant="caption" sx={{ color: 'text.disabled' }}>
             {queuePaused 
               ? "Queue is paused. Resume from dashboard to call next."
               : hasWaiting 
@@ -80,7 +70,7 @@ const CurrentlyServing = ({ customer, onComplete, onSkip, onCallNext, hasWaiting
               variant="contained"
               onClick={onCallNext}
               disabled={loading}
-              sx={{ mt: 3, bgcolor: COLORS.blue, color: COLORS.white, fontWeight: 600, px: 3, "&:hover": { bgcolor: "#2563eb" } }}
+              sx={{ mt: 3, bgcolor: 'info.main', color: 'primary.main', fontWeight: 600, px: 3, "&:hover": { bgcolor: "#2563eb" } }}
             >
               Call Next Manually
             </Button>
@@ -95,9 +85,11 @@ const CurrentlyServing = ({ customer, onComplete, onSkip, onCallNext, hasWaiting
       <Paper
         elevation={0}
         sx={{
-          bgcolor: COLORS.paper,
-          border: `1px solid ${COLORS.border}`,
-          borderLeft: `4px solid ${COLORS.green}`,
+          bgcolor: 'background.paper',
+          border: 1,
+          borderColor: 'divider',
+          borderLeft: 4,
+          borderLeftColor: 'success.main',
           borderRadius: "12px",
           p: 3,
           display: "flex",
@@ -120,21 +112,21 @@ const CurrentlyServing = ({ customer, onComplete, onSkip, onCallNext, hasWaiting
             width: 120,
             height: 120,
             borderRadius: "50%",
-            bgcolor: `${COLORS.green}08`,
+            bgcolor: (theme) => `${theme.palette.success.main}08`,
             filter: "blur(40px)",
           }}
         />
 
         <Typography
           variant="overline"
-          sx={{ color: COLORS.green, fontWeight: 700, letterSpacing: "0.15em", mb: 1, fontSize: "0.75rem" }}
+          sx={{ color: 'success.main', fontWeight: 700, letterSpacing: "0.15em", mb: 1, fontSize: "0.75rem" }}
         >
           Currently Serving
         </Typography>
 
         <Typography
           sx={{
-            color: COLORS.white,
+            color: 'primary.main',
             fontWeight: 800,
             fontVariantNumeric: "tabular-nums",
             lineHeight: 1,
@@ -145,12 +137,12 @@ const CurrentlyServing = ({ customer, onComplete, onSkip, onCallNext, hasWaiting
           {customer.tokenNumber || customer.token}
         </Typography>
 
-        <Typography variant="body1" sx={{ color: COLORS.text, fontWeight: 500, mb: 0.5 }}>
+        <Typography variant="body1" sx={{ color: 'text.primary', fontWeight: 500, mb: 0.5 }}>
           {customer.name}
         </Typography>
 
         {customer.phone && (
-          <Typography variant="caption" sx={{ color: COLORS.textMuted, mb: 3 }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', mb: 3 }}>
             {customer.phone}
           </Typography>
         )}
@@ -162,13 +154,13 @@ const CurrentlyServing = ({ customer, onComplete, onSkip, onCallNext, hasWaiting
             onClick={onComplete}
             disabled={loading}
             sx={{
-              bgcolor: COLORS.green,
-              color: COLORS.white,
+              bgcolor: 'success.main',
+              color: 'primary.main',
               fontWeight: 600,
               px: 3,
               py: 1,
               "&:hover": { bgcolor: "#16a34a" },
-              "&:disabled": { bgcolor: COLORS.borderLight, color: COLORS.textMuted },
+              "&:disabled": { bgcolor: 'custom.borderLight', color: 'text.secondary' },
             }}
           >
             Complete
@@ -179,13 +171,13 @@ const CurrentlyServing = ({ customer, onComplete, onSkip, onCallNext, hasWaiting
             onClick={onSkip}
             disabled={loading}
             sx={{
-              color: COLORS.amber,
-              borderColor: `${COLORS.amber}50`,
+              color: 'warning.main',
+              borderColor: (theme) => `${theme.palette.warning.main}50`,
               fontWeight: 600,
               px: 3,
               py: 1,
-              "&:hover": { bgcolor: `${COLORS.amber}15`, borderColor: COLORS.amber },
-              "&:disabled": { borderColor: COLORS.borderLight, color: COLORS.textMuted },
+              "&:hover": { bgcolor: (theme) => `${theme.palette.warning.main}15`, borderColor: 'warning.main' },
+              "&:disabled": { borderColor: 'custom.borderLight', color: 'text.secondary' },
             }}
           >
             Skip

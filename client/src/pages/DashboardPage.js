@@ -25,6 +25,7 @@ const darkTheme = createTheme({
     background: {
       default: "#111118",
       paper: "#16161e",
+      paperLight: "#1a1a24",
     },
     primary: {
       main: "#ffffff",
@@ -32,10 +33,27 @@ const darkTheme = createTheme({
     secondary: {
       main: "#8a8a8a",
     },
+    success: {
+      main: "#22c55e",
+    },
+    warning: {
+      main: "#f59e0b",
+    },
+    error: {
+      main: "#ef4444",
+    },
+    info: {
+      main: "#3b82f6",
+    },
     divider: "#2a2a35",
     text: {
       primary: "#e0e0e0",
       secondary: "#8a8a8a",
+      disabled: "#555555",
+    },
+    custom: {
+      borderLight: "#3a3a45",
+      purple: "#8b5cf6",
     },
   },
   typography: {

@@ -1,20 +1,14 @@
 import React from 'react';
 import { Paper, Box, Typography, Grow } from '@mui/material';
 
-const COLORS = {
-  paper: "#16161e",
-  border: "#2a2a35",
-  borderLight: "#3a3a45",
-  textMuted: "#8a8a8a",
-};
-
 const StatCard = ({ icon, label, value, color, delay = 0 }) => (
   <Grow in timeout={600 + delay}>
     <Paper
       elevation={0}
       sx={{
-        bgcolor: COLORS.paper,
-        border: `1px solid ${COLORS.border}`,
+        bgcolor: 'background.paper',
+        border: 1,
+        borderColor: 'divider',
         borderRadius: "12px",
         p: 2.5,
         flex: 1,
@@ -22,7 +16,7 @@ const StatCard = ({ icon, label, value, color, delay = 0 }) => (
         transition: "transform 0.2s, border-color 0.2s",
         "&:hover": {
           transform: "translateY(-2px)",
-          borderColor: COLORS.borderLight,
+          borderColor: 'custom.borderLight',
         },
       }}
     >
@@ -40,7 +34,7 @@ const StatCard = ({ icon, label, value, color, delay = 0 }) => (
         >
           {icon && React.cloneElement(icon, { sx: { fontSize: 18, color } })}
         </Box>
-        <Typography variant="caption" sx={{ color: COLORS.textMuted, fontWeight: 500 }}>
+        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
           {label}
         </Typography>
       </Box>
