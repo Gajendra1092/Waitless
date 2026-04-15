@@ -87,7 +87,8 @@ router.post('/logout', verifyToken, (req, res) => {
 // Get profile route
 router.get('/profile', verifyToken, async (req, res) => {
   try {
-    const business = await Business.findById(req.businessId).select('name email avatar');
+    // Select the necessary fields including phone and address for the settings page
+    const business = await Business.findById(req.businessId).select('name email avatar phone address');
     
     if (!business) {
       return res.status(404).json({ message: 'Business not found' });
@@ -96,6 +97,8 @@ router.get('/profile', verifyToken, async (req, res) => {
     res.status(200).json({
       name: business.name,
       email: business.email,
+      phone: business.phone || '',
+      address: business.address || '',
       avatar: business.avatar || null
     });
   } catch (error) {

@@ -36,19 +36,10 @@ const SettingsPage = () => {
     const fetchProfile = async () => {
       try {
         const { data } = await api.get('/api/business/profile');
-        // Fetch full profile for editing
-        const fullProfileRes = await api.get('/api/business/profile-full'); // Assuming this endpoint exists or will be created
-        setProfile(fullProfileRes.data);
+        setProfile(prev => ({ ...prev, ...data }));
       } catch (err) {
         console.error("Failed to fetch profile", err);
         setSnackbar({ open: true, message: 'Could not load profile data.', severity: 'error' });
-        // Fallback to basic profile data if full fails
-        try {
-            const { data } = await api.get('/api/business/profile');
-            setProfile(p => ({...p, ...data}));
-        } catch (e) {
-            // ignore
-        }
       }
     };
     fetchProfile();
