@@ -215,55 +215,6 @@ const getStatusChip = (status) => {
 };
 
 // ========================
-// MOCK DATA
-// ========================
-const MOCK_QUEUES = [
-  {
-    id: 1,
-    name: "General Queue",
-    status: "running",
-    customers: 12,
-    category: "General",
-  },
-  {
-    id: 2,
-    name: "VIP Lounge",
-    status: "running",
-    customers: 5,
-    category: "VIP",
-  },
-  {
-    id: 3,
-    name: "Support Desk",
-    status: "no customers",
-    customers: 0,
-    category: "Support",
-  },
-  {
-    id: 4,
-    name: "Checkout Lane 1",
-    status: "running",
-    customers: 8,
-    category: "General",
-  },
-  {
-    id: 5,
-    name: "Checkout Lane 2",
-    status: "paused",
-    customers: 3,
-    category: "General",
-  },
-];
-
-const MOCK_CATEGORIES = ["General", "VIP", "Support"];
-
-const MOCK_PROFILE = {
-  name: "John Doe",
-  email: "john.doe@waitless.com",
-  avatar: null,
-};
-
-// ========================
 // SIDEBAR COMPONENT
 // ========================
 const Sidebar = ({ open, onClose, isMobile }) => {
@@ -281,7 +232,7 @@ const Sidebar = ({ open, onClose, isMobile }) => {
       setProfile(data);
     } catch (err) {
       console.error("Failed to fetch profile:", err.message);
-      setProfile(MOCK_PROFILE);
+      setProfile(null);
     }
   };
 
@@ -526,11 +477,11 @@ const QueuePage = () => {
       setCategories(data);
     } catch (err) {
       console.error("Failed to fetch categories:", err.message);
-      setCategories(MOCK_CATEGORIES);
+      setCategories([]);
       setSnackbar({
         open: true,
-        message: "Using fallback categories because categories API failed.",
-        severity: "warning",
+        message: "Failed to load categories.",
+        severity: "error",
       });
     }
   };
@@ -554,30 +505,12 @@ const QueuePage = () => {
       );
     } catch (err) {
       console.error("Failed to fetch queues:", err.message);
-      let filtered = [...MOCK_QUEUES];
-
-      if (searchQuery) {
-        filtered = filtered.filter((q) =>
-          q.name.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-      }
-      if (statusFilter !== "all") {
-        filtered = filtered.filter((q) => q.status === statusFilter);
-      }
-      if (categoryFilter !== "all") {
-        filtered = filtered.filter((q) => q.category === categoryFilter);
-      }
-
-      const total = filtered.length;
-      const start = (page - 1) * ROWS_PER_PAGE;
-      const end = start + ROWS_PER_PAGE;
-
-      setQueues(filtered.slice(start, end));
-      setTotalPages(Math.max(1, Math.ceil(total / ROWS_PER_PAGE)));
+      setQueues([]);
+      setTotalPages(1);
       setSnackbar({
         open: true,
-        message: "Queue API failed. Showing fallback data.",
-        severity: "warning",
+        message: "Failed to load queues.",
+        severity: "error",
       });
     } finally {
       setLoading(false);

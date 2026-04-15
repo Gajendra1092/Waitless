@@ -40,19 +40,13 @@ const AnalyticsPage = () => {
         setData(res.data);
       } catch (err) {
         console.error("Failed to fetch analytics", err);
-        // Fallback mock data if API fails or is empty
+        // Show zeroed out data if API fails
         setData({
-          totalCompleted: 42,
-          totalSkipped: 8,
-          avgWait: 12,
-          weeklyTrend: [
-            { date: "10-01", customers: 20 }, { date: "10-02", customers: 35 },
-            { date: "10-03", customers: 45 }, { date: "10-04", customers: 30 },
-            { date: "10-05", customers: 55 }, { date: "10-06", customers: 42 }
-          ],
-          queueDistribution: [
-            { name: "General", value: 150 }, { name: "VIP", value: 45 }, { name: "Support", value: 32 }
-          ]
+          totalCompleted: 0,
+          totalSkipped: 0,
+          avgWait: 0,
+          weeklyTrend: [],
+          queueDistribution: []
         });
       } finally {
         setLoading(false);

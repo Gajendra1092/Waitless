@@ -62,48 +62,6 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// ========================
-// MOCK DATA
-// ========================
-const MOCK_QUEUE_INFO = {
-  _id: "q1",
-  name: "General Queue",
-  status: "running",
-  category: "General",
-  avgServiceTime: 8,
-};
-
-const MOCK_STATS = {
-  totalWaiting: 5,
-  currentlyServing: { _id: "cur1", token: 42, name: "Rahul Sharma", phone: "+91-9876543210" },
-  avgWait: 8,
-  completedToday: 17,
-};
-
-const MOCK_WAITING = [
-  { _id: "c1", position: 1, token: 43, name: "Priya Mehta", phone: "+91-9876543211", estWait: 8, status: "waiting" },
-  { _id: "c2", position: 2, token: 44, name: "Anil Verma", phone: "+91-9876543212", estWait: 16, status: "waiting" },
-  { _id: "c3", position: 3, token: 45, name: "Sunita Rao", phone: "+91-9876543213", estWait: 24, status: "waiting" },
-  { _id: "c4", position: 4, token: 46, name: "Deepak Joshi", phone: "+91-9876543214", estWait: 32, status: "waiting" },
-  { _id: "c5", position: 5, token: 47, name: "Kavya Singh", phone: "+91-9876543215", estWait: 40, status: "waiting" },
-  { _id: "c6", position: 6, token: 48, name: "Amit Patel", phone: "+91-9876543216", estWait: 48, status: "waiting" },
-  { _id: "c7", position: 7, token: 49, name: "Neha Gupta", phone: "+91-9876543217", estWait: 56, status: "waiting" },
-  { _id: "c8", position: 8, token: 50, name: "Ravi Kumar", phone: "+91-9876543218", estWait: 64, status: "waiting" },
-];
-
-const MOCK_SKIPPED = [
-  { _id: "s1", token: 38, name: "Meera Das", phone: "+91-9876543219", position: 0 },
-  { _id: "s2", token: 40, name: "Vikas Nair", phone: "+91-9876543220", position: 0 },
-];
-
-const MOCK_COMPLETED = [
-  { _id: "d1", token: 35, name: "Sanjay Reddy", phone: "+91-9876543221", completedAt: "10:30 AM" },
-  { _id: "d2", token: 36, name: "Pooja Iyer", phone: "+91-9876543222", completedAt: "10:38 AM" },
-  { _id: "d3", token: 37, name: "Kiran Bhat", phone: "+91-9876543223", completedAt: "10:45 AM" },
-  { _id: "d4", token: 39, name: "Lakshmi Pillai", phone: "+91-9876543224", completedAt: "10:53 AM" },
-  { _id: "d5", token: 41, name: "Arjun Menon", phone: "+91-9876543225", completedAt: "11:01 AM" },
-];
-
 const ROWS_PER_PAGE = 5;
 
 // ========================
@@ -415,9 +373,9 @@ const QueueDetailsPage = () => {
       setCurrentCustomer(data.currentCustomer || data.stats?.currentlyServing || null);
     } catch (err) {
       console.error("Failed to fetch queue details:", err.message);
-      setQueueInfo(MOCK_QUEUE_INFO);
-      setStats(MOCK_STATS);
-      setCurrentCustomer(MOCK_STATS.currentlyServing);
+      setQueueInfo(null);
+      setStats(null);
+      setCurrentCustomer(null);
     }
     setLoading(false);
   }, [queueId]);
@@ -431,9 +389,8 @@ const QueueDetailsPage = () => {
       setWaitingTotalPages(data.totalPages || Math.ceil((data.total || data.length) / ROWS_PER_PAGE));
     } catch (err) {
       console.error("Failed to fetch waiting list:", err.message);
-      const s = (waitingPage - 1) * ROWS_PER_PAGE;
-      setWaitingList(MOCK_WAITING.slice(s, s + ROWS_PER_PAGE));
-      setWaitingTotalPages(Math.ceil(MOCK_WAITING.length / ROWS_PER_PAGE));
+      setWaitingList([]);
+      setWaitingTotalPages(1);
     }
   }, [queueId, waitingPage]);
 
@@ -446,9 +403,8 @@ const QueueDetailsPage = () => {
       setSkippedTotalPages(data.totalPages || Math.ceil((data.total || data.length) / ROWS_PER_PAGE));
     } catch (err) {
       console.error("Failed to fetch skipped list:", err.message);
-      const s = (skippedPage - 1) * ROWS_PER_PAGE;
-      setSkippedList(MOCK_SKIPPED.slice(s, s + ROWS_PER_PAGE));
-      setSkippedTotalPages(Math.ceil(MOCK_SKIPPED.length / ROWS_PER_PAGE));
+      setSkippedList([]);
+      setSkippedTotalPages(1);
     }
   }, [queueId, skippedPage]);
 
@@ -461,9 +417,8 @@ const QueueDetailsPage = () => {
       setCompletedTotalPages(data.totalPages || Math.ceil((data.total || data.length) / ROWS_PER_PAGE));
     } catch (err) {
       console.error("Failed to fetch completed list:", err.message);
-      const s = (completedPage - 1) * ROWS_PER_PAGE;
-      setCompletedList(MOCK_COMPLETED.slice(s, s + ROWS_PER_PAGE));
-      setCompletedTotalPages(Math.ceil(MOCK_COMPLETED.length / ROWS_PER_PAGE));
+      setCompletedList([]);
+      setCompletedTotalPages(1);
     }
   }, [queueId, completedPage]);
 
