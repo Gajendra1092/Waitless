@@ -18,6 +18,7 @@ import {
   Edit as EditIcon,
 } from "@mui/icons-material";
 import api from "../utils/api";
+import { useProfileStore } from "../store/useProfileStore";
 
 const SettingsCard = ({ title, icon, action, children }) => (
   <Paper sx={{ p: { xs: 2, md: 3 }, borderRadius: "12px" }}>
@@ -43,6 +44,8 @@ const SettingsCard = ({ title, icon, action, children }) => (
 );
 
 const SettingsPage = () => {
+  const { profile: globalProfile, fetchProfile, updateProfileLocally } = useProfileStore();
+
   const [profile, setProfile] = useState({
     id: "",
     name: "",
@@ -66,22 +69,15 @@ const SettingsPage = () => {
   });
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const { data } = await api.get("/api/business/profile");
-        setProfile((prev) => ({ ...prev, ...data }));
-        setOriginalProfile(data);
-      } catch (err) {
-        console.error("Failed to fetch profile", err);
-        setSnackbar({
-          open: true,
-          message: "Could not load profile data.",
-          severity: "error",
-        });
-      }
-    };
     fetchProfile();
-  }, []);
+  }, [fetchProfile]);
+
+  useEffect(() => {
+    if (globalProfile) {
+      setProfile((prev) => ({ ...prev, ...globalProfile }));
+      setOriginalProfile(globalProfile);
+    }
+  }, [globalProfile]);
 
   const handleProfileChange = (e) => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
@@ -95,6 +91,11 @@ const SettingsPage = () => {
     setLoadingProfile(true);
     try {
       const { data } = await api.patch("/api/business/profile", {
+        name: profile.name,
+        phone: profile.phone,
+        address: profile.address,
+      });
+      updateProfileLocally({
         name: profile.name,
         phone: profile.phone,
         address: profile.address,
