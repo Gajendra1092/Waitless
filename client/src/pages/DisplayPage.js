@@ -146,7 +146,7 @@ function DisplayPage() {
 
         <Grid container spacing={2} justifyContent="center" sx={{ mb: 4 }}>
           {upcomingCustomers.map((customer) => (
-            <Grid item key={customer.tokenNumber} xs={12} sm={6} md={3}>
+            <Grid key={customer.tokenNumber} size={{ xs: 12, sm: 6, md: 3 }}>
               <Card sx={{ p: 2, textAlign: 'center' }}>
                 <Typography variant="h4">#{customer.tokenNumber}</Typography>
                 <Typography variant="body2" color="text.secondary">{customer.name}</Typography>

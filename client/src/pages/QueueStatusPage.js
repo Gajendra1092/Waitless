@@ -140,8 +140,8 @@ function QueueStatusPage() {
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
+      <Grid container spacing={3} >
+        <Grid size={{ xs: 12, md: 6 }}>
           <Card sx={{ p: 2, textAlign: 'center' }}>
             <CardContent>
               <Typography variant="overline">Your Token</Typography>
@@ -156,8 +156,8 @@ function QueueStatusPage() {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={6} container direction="column" spacing={3}>
-            <Grid item>
+        <Grid size={{ xs: 12, md: 6 }} container direction="column" spacing={3}>
+            <Grid>
                 <Card sx={{p: 2}}>
                     <CardContent>
                         <Typography variant="overline">Estimated Wait</Typography>
@@ -167,7 +167,7 @@ function QueueStatusPage() {
                     </CardContent>
                 </Card>
             </Grid>
-            <Grid item>
+            <Grid>
                 <Card sx={{p: 2}}>
                     <CardContent>
                         <Typography variant="overline">Queue Info</Typography>
@@ -176,7 +176,7 @@ function QueueStatusPage() {
                     </CardContent>
                 </Card>
             </Grid>
-            <Grid item>
+            <Grid>
                 <Alert severity="info">You'll be notified when you're close. You can safely leave this page.</Alert>
             </Grid>
         </Grid>

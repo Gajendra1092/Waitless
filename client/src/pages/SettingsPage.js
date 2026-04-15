@@ -180,7 +180,7 @@ const SettingsPage = () => {
 
       <Grid container spacing={4}>
         {/* Profile Settings */}
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <SettingsCard
             title="Business Profile"
             icon={<PersonIcon sx={{ color: "#8a8a8a" }} />}
@@ -199,7 +199,7 @@ const SettingsPage = () => {
           >
             {!isEditingProfile ? (
               <Grid container spacing={3}>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="caption" sx={{ color: "#8a8a8a" }}>
                     Business ID
                   </Typography>
@@ -214,7 +214,7 @@ const SettingsPage = () => {
                     {profile.id || "—"}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="caption" sx={{ color: "#8a8a8a" }}>
                     Business Name
                   </Typography>
@@ -225,7 +225,7 @@ const SettingsPage = () => {
                     {profile.name || "—"}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="caption" sx={{ color: "#8a8a8a" }}>
                     Email Address
                   </Typography>
@@ -236,7 +236,7 @@ const SettingsPage = () => {
                     {profile.email || "—"}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="caption" sx={{ color: "#8a8a8a" }}>
                     Contact Phone
                   </Typography>
@@ -247,7 +247,7 @@ const SettingsPage = () => {
                     {profile.phone || "—"}
                   </Typography>
                 </Grid>
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <Typography variant="caption" sx={{ color: "#8a8a8a" }}>
                     Address
                   </Typography>
@@ -262,7 +262,7 @@ const SettingsPage = () => {
             ) : (
               <Box>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       label="Business ID"
                       value={profile.id || ""}
@@ -272,7 +272,7 @@ const SettingsPage = () => {
                       helperText="ID cannot be changed."
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       label="Email Address"
                       value={profile.email || ""}
@@ -282,7 +282,7 @@ const SettingsPage = () => {
                       helperText="Email cannot be changed."
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       label="Business Name"
                       name="name"
@@ -292,7 +292,7 @@ const SettingsPage = () => {
                       size="small"
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       label="Contact Phone"
                       name="phone"
@@ -302,7 +302,7 @@ const SettingsPage = () => {
                       size="small"
                     />
                   </Grid>
-                  <Grid item xs={12}>
+                  <Grid size={{ xs: 12 }}>
                     <TextField
                       label="Address"
                       name="address"
@@ -348,13 +348,13 @@ const SettingsPage = () => {
         </Grid>
 
         {/* Security Settings */}
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <SettingsCard
             title="Security"
             icon={<LockIcon sx={{ color: "#8a8a8a" }} />}
           >
             <Grid container spacing={2}>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <TextField
                   label="Current Password"
                   name="currentPassword"
@@ -365,7 +365,7 @@ const SettingsPage = () => {
                   size="small"
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   label="New Password"
                   name="newPassword"
@@ -376,7 +376,7 @@ const SettingsPage = () => {
                   size="small"
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   label="Confirm New Password"
                   name="confirmPassword"
