@@ -12,7 +12,7 @@ import {
 } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 
-// ─── Theme ────────────────────────────────────────────────────────────────────
+// ─── Theme ────
 const theme = createTheme({
   palette: {
     mode: 'dark',
@@ -69,7 +69,7 @@ const theme = createTheme({
   },
 });
 
-// ─── Animated Background ──────────────────────────────────────────────────────
+// ─── Animated Background ──────────
 // FIX 1: position absolute (not fixed) so it's contained in the relative wrapper
 // FIX 2: dot grid instead of line grid — more visible on dark bg
 function AnimatedBg() {
@@ -105,7 +105,7 @@ function AnimatedBg() {
   );
 }
 
-// ─── Navbar ───────────────────────────────────────────────────────────────────
+// ─── Navbar ────────
 function Navbar() {
   const scrollTo = (id) => document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
   return (

@@ -11,17 +11,14 @@ import {
   AppBar,
   Toolbar,
 } from "@mui/material";
-import {
-  Settings as SettingsIcon,
-  Menu as MenuIcon,
-} from "@mui/icons-material";
+import { Menu as MenuIcon } from "@mui/icons-material";
 import AnalyticsPage from "./AnalyticsPage";
 import Sidebar from "../components/Sidebar";
 import QueuePage from "../components/QueuePage";
+import SettingsPage from "./SettingsPage";
 
-// ========================
 // THEME
-// ========================
+
 const darkTheme = createTheme({
   palette: {
     mode: "dark",
@@ -120,33 +117,8 @@ const darkTheme = createTheme({
   },
 });
 
-// ========================
-// SETTINGS PAGE
-// ========================
-const SettingsPage = () => (
-  <Box
-    sx={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      height: "80vh",
-      flexDirection: "column",
-      gap: 2,
-    }}
-  >
-    <SettingsIcon sx={{ fontSize: 64, color: "#2a2a35" }} />
-    <Typography variant="h5" sx={{ color: "#8a8a8a", fontWeight: 600 }}>
-      Settings
-    </Typography>
-    <Typography variant="body2" sx={{ color: "#555" }}>
-      Coming Soon
-    </Typography>
-  </Box>
-);
-
-// ========================
 // MAIN APP COMPONENT
-// ========================
+
 const DashboardPage = () => {
   const isMobile = useMediaQuery(darkTheme.breakpoints.down("md"));
   const [sidebarOpen, setSidebarOpen] = useState(false);

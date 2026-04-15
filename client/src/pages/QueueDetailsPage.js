@@ -28,18 +28,14 @@ import {
   Tab,
   Divider,
   Fade,
-  Grow,
   Slide,
-  Switch,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
-  CheckCircle as CheckCircleIcon,
   SkipNext as SkipNextIcon,
   Phone as PhoneIcon,
   FastForward as FastForwardIcon,
   Undo as UndoIcon,
-  PersonOff as PersonOffIcon,
   People as PeopleIcon,
   HourglassEmpty as HourglassEmptyIcon,
   DoneAll as DoneAllIcon,
@@ -54,9 +50,9 @@ import TokenChip from "../components/TokenChip";
 
 const ROWS_PER_PAGE = 5;
 
-// ========================
+
 // COLORS (matching dashboard)
-// ========================
+
 const COLORS = {
   bg: "#111118",
   paper: "#16161e",
@@ -74,9 +70,8 @@ const COLORS = {
   red: "#ef4444",
 };
 
-// ========================
 // MAIN COMPONENT
-// ========================
+
 const QueueDetailsPage = () => {
   const { queueId } = useParams();
   const navigate = useNavigate();
@@ -319,9 +314,8 @@ const QueueDetailsPage = () => {
     },
   };
 
-  // ========================
   // LOADING STATE
-  // ========================
+
   if (loading) {
     return (
       <Box sx={{ p: { xs: 2, md: 3 }, bgcolor: COLORS.bg, minHeight: "100vh" }}>
@@ -339,9 +333,9 @@ const QueueDetailsPage = () => {
     );
   }
 
-  // ========================
+
   // RENDER
-  // ========================
+
   return (
     <Box
       sx={{

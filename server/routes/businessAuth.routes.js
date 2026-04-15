@@ -103,4 +103,56 @@ router.get('/profile', verifyToken, async (req, res) => {
   }
 });
 
+// Update profile route
+router.patch('/profile', verifyToken, async (req, res) => {
+  try {
+    const { name, phone, address } = req.body;
+    const business = await Business.findById(req.businessId);
+
+    if (!business) {
+      return res.status(404).json({ message: 'Business not found' });
+    }
+
+    if (name) business.name = name;
+    // Allow empty strings to clear optional fields
+    if (typeof phone !== 'undefined') business.phone = phone;
+    if (typeof address !== 'undefined') business.address = address;
+
+    await business.save();
+    res.status(200).json({ message: 'Profile updated successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Change password route
+router.post('/change-password', verifyToken, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'All password fields are required' });
+    }
+    if (newPassword.length < 6) {
+        return res.status(400).json({ message: 'New password must be at least 6 characters long' });
+    }
+
+    const business = await Business.findById(req.businessId);
+    if (!business) {
+      return res.status(404).json({ message: 'Business not found' });
+    }
+
+    const isMatch = await bcryptjs.compare(currentPassword, business.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Incorrect current password' });
+    }
+
+    business.password = newPassword; // The pre-save hook in the model will hash it
+    await business.save();
+
+    res.status(200).json({ message: 'Password changed successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 export default router;
