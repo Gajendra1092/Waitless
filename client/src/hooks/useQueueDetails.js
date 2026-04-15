@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { socket } from "../socket";
+import { socket } from "../utils/socket";
 import api from "../utils/api";
 
 const ROWS_PER_PAGE = 5;
