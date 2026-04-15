@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
@@ -23,27 +23,18 @@ import {
   ChevronLeft as ChevronLeftIcon,
 } from "@mui/icons-material";
 import api from "../utils/api";
+import { useProfileStore } from "../store/useProfileStore";
 
 const DRAWER_WIDTH = 240;
 
 const Sidebar = ({ open, onClose, isMobile }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [profile, setProfile] = useState(null);
+  const { profile, fetchProfile } = useProfileStore();
 
   useEffect(() => {
     fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
-    try {
-      const { data } = await api.get("/api/business/profile");
-      setProfile(data);
-    } catch (err) {
-      console.error("Failed to fetch profile:", err.message);
-      setProfile(null);
-    }
-  };
+  }, [fetchProfile]);
 
   const navItems = [
     { label: "Queue", icon: <QueueIcon />, path: "/dashboard" },
