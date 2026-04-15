@@ -39,9 +39,9 @@ const styles = {
   insightIcon: { color: "#8a8a8a", fontSize: 20, mt: 0.2 },
   insightText: { color: "#e0e0e0", lineHeight: 1.6 },
   chartsGrid: { display: "grid", gridTemplateColumns: { xs: "1fr", lg: "2fr 1fr" }, gap: 3 },
-  chartCard: { bgcolor: "#16161e", border: "1px solid #2a2a35", p: 3, borderRadius: "12px" },
+  chartCard: { bgcolor: "#16161e", border: "1px solid #2a2a35", p: 3, borderRadius: "12px", minWidth: 0 },
   chartTitle: { color: "#ffffff", fontWeight: 600, mb: 3 },
-  chartWrapper: { width: "100%", height: 300 },
+  chartWrapper: { width: "100%", height: 300, minWidth: 0 },
   noDataWrapper: { height: 300, display: "flex", alignItems: "center", justifyContent: "center" },
   noDataText: { color: "#8a8a8a" },
 };
@@ -140,7 +140,7 @@ const AnalyticsPage = () => {
         <Paper sx={styles.chartCard}>
           <Typography variant="subtitle1" sx={styles.chartTitle}>Weekly Traffic Trend</Typography>
           <Box sx={styles.chartWrapper}>
-            <ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <LineChart data={data.weeklyTrend}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#2a2a35" vertical={false} />
                 <XAxis dataKey="date" stroke="#8a8a8a" tick={{ fill: "#8a8a8a", fontSize: 12 }} dy={10} />
@@ -160,7 +160,7 @@ const AnalyticsPage = () => {
           <Typography variant="subtitle1" sx={styles.chartTitle}>Traffic by Queue</Typography>
           {data.queueDistribution.length > 0 ? (
             <Box sx={styles.chartWrapper}>
-              <ResponsiveContainer>
+              <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                 <PieChart>
                   <Pie data={data.queueDistribution} cx="50%" cy="45%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none">
                     {data.queueDistribution.map((entry, index) => (
