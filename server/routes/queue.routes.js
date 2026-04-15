@@ -334,35 +334,6 @@ router.get('/:queueId', async (req, res) => {
   }
 });
 
-// router.post('/:queueId/join', async (req, res) => {
-//   try {
-//     const { name, phone } = req.body;
-
-//     // 1. Find how many customers are already waiting
-//     const lastCustomer = await Customer.findOne({ queueId: req.params.queueId })
-//       .sort({ position: -1 }); // get the last position
-
-//     const newPosition = lastCustomer ? lastCustomer.position + 1 : 1;
-
-//     // 2. Build the object
-//     const newCustomer = new Customer({
-//       queueId: req.params.queueId,
-//       name,
-//       phone,
-//       position: newPosition,
-//       tokenNumber: newPosition, // or use a counter logic
-//       status: 'waiting',
-//       joinedAt: new Date(),
-//     });
-
-//     // 3. Save to DB
-//     const saved = await newCustomer.save();
-//     res.status(201).json(saved);
-
-//   } catch (error) {
-//     res.status(500).json({ message: 'Server error', error });
-//   }
-// });
 
 // ========================
 // ANALYTICS ROUTES
