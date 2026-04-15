@@ -1,7 +1,6 @@
 // QueueDetailsPage.js
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
 import {
   Box,
   Typography,
@@ -48,19 +47,7 @@ import {
   Person as PersonIcon,
 } from "@mui/icons-material";
 import { socket } from "../socket";
-
-const api = axios.create({
-  baseURL: process.env.REACT_APP_SERVER_URL,
-});
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers = config.headers || {};
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+import api from "../utils/api";
 
 const ROWS_PER_PAGE = 5;
 

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
 import {
   Box,
   CssBaseline,
@@ -61,6 +60,7 @@ import {
 } from "@mui/icons-material";
 import { socket } from "../socket";
 import AnalyticsPage from "./AnalyticsPage";
+import api from "../utils/api";
 
 // ========================
 // THEME
@@ -164,19 +164,6 @@ const darkTheme = createTheme({
 });
 
 const DRAWER_WIDTH = 240;
-
-const api = axios.create({
-  baseURL: process.env.REACT_APP_SERVER_URL,
-});
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers = config.headers || {};
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
 
 // ========================
 // STATUS HELPERS
