@@ -1,6 +1,6 @@
 // QueueDetailsPage.js
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React from "react";
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -42,262 +42,35 @@ import {
   Timer as TimerIcon,
   Person as PersonIcon,
 } from "@mui/icons-material";
-import { socket } from "../socket";
-import api from "../utils/api";
 import StatCard from "../components/StatCard";
 import CurrentlyServing from "../components/CurrentlyServing";
 import TokenChip from "../components/TokenChip";
-
-const ROWS_PER_PAGE = 5;
-
-
-// COLORS (matching dashboard)
-
-const COLORS = {
-  bg: "#111118",
-  paper: "#16161e",
-  paperLight: "#1a1a24",
-  border: "#2a2a35",
-  borderLight: "#3a3a45",
-  text: "#e0e0e0",
-  textMuted: "#8a8a8a",
-  textDim: "#555555",
-  white: "#ffffff",
-  green: "#22c55e",
-  amber: "#f59e0b",
-  blue: "#3b82f6",
-  purple: "#8b5cf6",
-  red: "#ef4444",
-};
+import { useQueueDetails } from '../hooks/useQueueDetails';
+import { useTheme } from "@mui/material/styles";
 
 // MAIN COMPONENT
 
 const QueueDetailsPage = () => {
   const { queueId } = useParams();
   const navigate = useNavigate();
+  const {
+    queueInfo, stats, currentCustomer, waitingList, skippedList, completedList,
+    loading, actionLoading, activeTab, snackbar, skipDialog,
+    pagination, autoCall,
+    setActiveTab, setSnackbar, setSkipDialog,
+    handleComplete, handleSkipConfirm, handleUndoSkip, handleCallNext,
+  } = useQueueDetails(queueId);
 
-  const [queueInfo, setQueueInfo] = useState(null);
-  const [stats, setStats] = useState(null);
-  const [currentCustomer, setCurrentCustomer] = useState(null);
-  const [waitingList, setWaitingList] = useState([]);
-  const [skippedList, setSkippedList] = useState([]);
-  const [completedList, setCompletedList] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
-  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
-  const [skipDialog, setSkipDialog] = useState({ open: false, customer: null, type: "" });
-
-  const [waitingPage, setWaitingPage] = useState(1);
-  const [waitingTotalPages, setWaitingTotalPages] = useState(1);
-  const [skippedPage, setSkippedPage] = useState(1);
-  const [skippedTotalPages, setSkippedTotalPages] = useState(1);
-  const [completedPage, setCompletedPage] = useState(1);
-  const [completedTotalPages, setCompletedTotalPages] = useState(1);
-  const [isAutoCallEnabled, setIsAutoCallEnabled] = useState(true);
-
-  const autoCallInProgress = useRef(false);
-
-  // ---- FETCH ----
-  const fetchQueueDetails = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { data } = await api.get(`/api/queue/${queueId}/details`);
-      setQueueInfo(data.queue || data.queueInfo);
-      setStats(data.stats);
-      setCurrentCustomer(data.currentCustomer || data.stats?.currentlyServing || null);
-    } catch (err) {
-      console.error("Failed to fetch queue details:", err.message);
-      setQueueInfo(null);
-      setStats(null);
-      setCurrentCustomer(null);
-    }
-    setLoading(false);
-  }, [queueId]);
-
-  const fetchWaitingList = useCallback(async () => {
-    try {
-      const { data } = await api.get(`/api/queue/${queueId}/waiting`, {
-        params: { page: waitingPage, limit: ROWS_PER_PAGE },
-      });
-      setWaitingList(data.customers || data);
-      setWaitingTotalPages(data.totalPages || Math.ceil((data.total || data.length) / ROWS_PER_PAGE));
-    } catch (err) {
-      console.error("Failed to fetch waiting list:", err.message);
-      setWaitingList([]);
-      setWaitingTotalPages(1);
-    }
-  }, [queueId, waitingPage]);
-
-  const fetchSkippedList = useCallback(async () => {
-    try {
-      const { data } = await api.get(`/api/queue/${queueId}/skipped`, {
-        params: { page: skippedPage, limit: ROWS_PER_PAGE },
-      });
-      setSkippedList(data.customers || data);
-      setSkippedTotalPages(data.totalPages || Math.ceil((data.total || data.length) / ROWS_PER_PAGE));
-    } catch (err) {
-      console.error("Failed to fetch skipped list:", err.message);
-      setSkippedList([]);
-      setSkippedTotalPages(1);
-    }
-  }, [queueId, skippedPage]);
-
-  const fetchCompletedList = useCallback(async () => {
-    try {
-      const { data } = await api.get(`/api/queue/${queueId}/completed`, {
-        params: { page: completedPage, limit: ROWS_PER_PAGE },
-      });
-      setCompletedList(data.customers || data);
-      setCompletedTotalPages(data.totalPages || Math.ceil((data.total || data.length) / ROWS_PER_PAGE));
-    } catch (err) {
-      console.error("Failed to fetch completed list:", err.message);
-      setCompletedList([]);
-      setCompletedTotalPages(1);
-    }
-  }, [queueId, completedPage]);
-
-  useEffect(() => { fetchQueueDetails(); }, [fetchQueueDetails]);
-  useEffect(() => { fetchWaitingList(); }, [fetchWaitingList]);
-  useEffect(() => { if (activeTab === 1) fetchSkippedList(); }, [activeTab, fetchSkippedList]);
-  useEffect(() => { if (activeTab === 2) fetchCompletedList(); }, [activeTab, fetchCompletedList]);
-
-  // ---- WEBSOCKET ----
-  useEffect(() => {
-    if (queueId) {
-      socket.connect();
-      socket.emit('join-queue-room', queueId);
-
-      const handleQueueUpdate = () => {
-        fetchQueueDetails();
-        fetchWaitingList();
-        if (activeTab === 1) fetchSkippedList();
-        if (activeTab === 2) fetchCompletedList();
-      };
-
-      socket.on('queue-updated', handleQueueUpdate);
-
-      return () => {
-        socket.off('queue-updated', handleQueueUpdate);
-        socket.disconnect();
-      };
-    };
-  }, [queueId, activeTab, fetchWaitingList, fetchSkippedList, fetchCompletedList, fetchQueueDetails]);
-
-  // ---- AUTO CALL NEXT ----
-  const handleCallNext = useCallback(async () => {
-    if (waitingList.length === 0) return;
-    const nextCustomer = waitingList[0];
-    setActionLoading(true);
-    try {
-      await api.patch(`/api/customer/${nextCustomer._id}/call`);
-      setSnackbar({
-        open: true,
-        message: `Token #${nextCustomer.tokenNumber || nextCustomer.token} (${nextCustomer.name}) called to counter`,
-        severity: "success",
-      });
-      await fetchQueueDetails();
-      await fetchWaitingList();
-    } catch (err) {
-      console.error("Call next failed:", err.message);
-      setSnackbar({ open: true, message: "Failed to call next. Try again.", severity: "error" });
-    } finally {
-      setActionLoading(false);
-    }
-  }, [waitingList, fetchQueueDetails, fetchWaitingList]);
-
-  useEffect(() => {
-    let intervalId;
-
-    const checkAndCall = async () => {
-      if (
-        isAutoCallEnabled &&
-        queueInfo &&
-        queueInfo.status !== "paused" &&
-        !currentCustomer &&
-        waitingList.length > 0 &&
-        !autoCallInProgress.current
-      ) {
-        autoCallInProgress.current = true;
-        await handleCallNext();
-        
-        // Small timeout to prevent race conditions with WebSocket updates
-        setTimeout(() => {
-          autoCallInProgress.current = false;
-        }, 1500);
-      }
-    };
-
-    // Run immediately when dependencies change
-    checkAndCall();
-
-    // Fallback interval to retry in case the process got stuck (e.g., network failure)
-    if (isAutoCallEnabled && queueInfo?.status !== "paused" && !currentCustomer && waitingList.length > 0) {
-      intervalId = setInterval(checkAndCall, 3000);
-    }
-
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [isAutoCallEnabled, queueInfo, currentCustomer, waitingList, handleCallNext]);
-
-  // ---- ACTIONS ----
-  const handleComplete = async () => {
-    if (!currentCustomer) return;
-    setActionLoading(true);
-    try {
-      await api.post(`/api/queue/${queueId}/complete`, { customerId: currentCustomer._id || currentCustomer.tokenNumber || currentCustomer.token });
-      setSnackbar({ open: true, message: `Token #${currentCustomer.tokenNumber || currentCustomer.token} marked as complete`, severity: "success" });
-      fetchQueueDetails(); fetchWaitingList();
-      if (activeTab === 2) fetchCompletedList();
-    } catch (err) {
-      console.error("Complete failed:", err.message);
-      setSnackbar({ open: true, message: "Failed to complete. Try again.", severity: "error" });
-    }
-    setActionLoading(false);
-  };
+  const theme = useTheme();
 
   const handleSkipCurrentOpen = () => {
     if (!currentCustomer) return;
     setSkipDialog({ open: true, customer: currentCustomer, type: "current" });
   };
-
   const handleSkipRowOpen = (customer) => {
     setSkipDialog({ open: true, customer, type: "row" });
   };
-
-  const handleSkipConfirm = async () => {
-    const { customer, type } = skipDialog;
-    if (!customer) return;
-    setActionLoading(true);
-    setSkipDialog({ open: false, customer: null, type: "" });
-    try {
-      const endpoint = type === "current" ? `/api/queue/${queueId}/skip-current` : `/api/queue/${queueId}/skip`;
-      await api.post(endpoint, { customerId: customer._id || customer.tokenNumber || customer.token });
-      setSnackbar({ open: true, message: `Token #${customer.tokenNumber || customer.token} (${customer.name}) skipped`, severity: "info" });
-      fetchQueueDetails(); fetchWaitingList();
-      if (activeTab === 1) fetchSkippedList();
-    } catch (err) {
-      console.error("Skip failed:", err.message);
-      setSnackbar({ open: true, message: "Failed to skip. Try again.", severity: "error" });
-    }
-    setActionLoading(false);
-  };
-
   const handleSkipCancel = () => { setSkipDialog({ open: false, customer: null, type: "" }); };
-
-  const handleUndoSkip = async (customer) => {
-    setActionLoading(true);
-    try {
-      await api.post(`/api/queue/${queueId}/undo-skip`, { customerId: customer._id || customer.tokenNumber || customer.token });
-      setSnackbar({ open: true, message: `Token #${customer.tokenNumber || customer.token} (${customer.name}) added back to queue`, severity: "success" });
-      fetchSkippedList(); fetchWaitingList(); fetchQueueDetails();
-    } catch (err) {
-      console.error("Undo skip failed:", err.message);
-      setSnackbar({ open: true, message: "Failed to undo skip. Try again.", severity: "error" });
-    }
-    setActionLoading(false);
-  };
 
   const handleCall = (phone) => {
     if (phone) window.open(`tel:${phone}`, "_self");
@@ -307,10 +80,10 @@ const QueueDetailsPage = () => {
   // ---- PAGINATION SX ----
   const paginationSx = {
     "& .MuiPaginationItem-root": {
-      color: COLORS.textMuted,
-      borderColor: COLORS.border,
-      "&.Mui-selected": { bgcolor: COLORS.border, color: COLORS.white },
-      "&:hover": { bgcolor: COLORS.paperLight },
+      color: 'text.secondary',
+      borderColor: 'divider',
+      "&.Mui-selected": { bgcolor: 'divider', color: 'primary.main' },
+      "&:hover": { bgcolor: 'background.paperLight' },
     },
   };
 
@@ -318,7 +91,7 @@ const QueueDetailsPage = () => {
 
   if (loading) {
     return (
-      <Box sx={{ p: { xs: 2, md: 3 }, bgcolor: COLORS.bg, minHeight: "100vh" }}>
+      <Box sx={{ p: { xs: 2, md: 3 }, bgcolor: 'background.default', minHeight: "100vh" }}>
         <Skeleton variant="text" width={200} height={40} sx={{ mb: 2 }} />
         <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
           {[...Array(4)].map((_, i) => (
@@ -340,9 +113,9 @@ const QueueDetailsPage = () => {
     <Box
       sx={{
         p: { xs: 2, md: 3 },
-        bgcolor: COLORS.bg,
+        bgcolor: 'background.default',
         minHeight: "100vh",
-        color: COLORS.text,
+        color: 'text.primary',
         maxWidth: 1400,
         mx: "auto",
       }}
@@ -355,10 +128,10 @@ const QueueDetailsPage = () => {
               <IconButton
                 onClick={() => navigate("/dashboard")}
                 sx={{
-                  color: COLORS.textMuted,
-                  border: `1px solid ${COLORS.border}`,
+                  color: 'text.secondary',
+                  border: 1, borderColor: 'divider',
                   borderRadius: "10px",
-                  "&:hover": { bgcolor: COLORS.paperLight, color: COLORS.white, borderColor: COLORS.borderLight },
+                  "&:hover": { bgcolor: 'background.paperLight', color: 'primary.main', borderColor: 'custom.borderLight' },
                   transition: "all 0.2s",
                 }}
               >
@@ -369,14 +142,14 @@ const QueueDetailsPage = () => {
               <Chip
                 label={queueInfo.category}
                 size="small"
-                sx={{ bgcolor: COLORS.border, color: COLORS.text, fontWeight: 500 }}
+                sx={{ bgcolor: 'divider', color: 'text.primary', fontWeight: 500 }}
               />
             )}
           </Box>
-          <Typography variant="caption" sx={{ color: COLORS.textMuted, display: "block", mb: 0.25, ml: 0.5 }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', display: "block", mb: 0.25, ml: 0.5 }}>
             🏠 &nbsp;Dashboard &gt; Queue &gt; {queueInfo?.name || "Details"}
           </Typography>
-          <Typography variant="h4" sx={{ fontWeight: 700, color: COLORS.white, letterSpacing: "-0.02em", ml: 0.5 }}>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: 'primary.main', letterSpacing: "-0.02em", ml: 0.5 }}>
             {queueInfo?.name || "Queue Details"}
           </Typography>
         </Box>
@@ -384,16 +157,16 @@ const QueueDetailsPage = () => {
 
       {/* ======== STAT CARDS ======== */}
       <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
-        <StatCard icon={<PeopleIcon />} label="Total Waiting" value={stats?.totalWaiting ?? "—"} color={COLORS.blue} delay={0} />
+        <StatCard icon={<PeopleIcon />} label="Total Waiting" value={stats?.totalWaiting ?? "—"} color={theme.palette.info.main} delay={0} />
         <StatCard
           icon={<PersonIcon />}
           label="Currently Serving"
           value={currentCustomer ? `${currentCustomer.name?.split(" ")[0]} (#${currentCustomer.tokenNumber || currentCustomer.token})` : "None"}
-          color={COLORS.green}
+          color={theme.palette.success.main}
           delay={100}
         />
-        <StatCard icon={<TimerIcon />} label="Avg. Wait (mins)" value={stats?.avgWait ?? "—"} color={COLORS.amber} delay={200} />
-        <StatCard icon={<DoneAllIcon />} label="Completed Today" value={stats?.completedToday ?? "—"} color={COLORS.purple} delay={300} />
+        <StatCard icon={<TimerIcon />} label="Avg. Wait (mins)" value={stats?.avgWait ?? "—"} color={theme.palette.warning.main} delay={200} />
+        <StatCard icon={<DoneAllIcon />} label="Completed Today" value={stats?.completedToday ?? "—"} color={theme.palette.custom.purple} delay={300} />
       </Box>
 
       {/* ======== MAIN CONTENT: Currently Serving + Tabs ======== */}
@@ -413,8 +186,8 @@ const QueueDetailsPage = () => {
           onCallNext={handleCallNext}
           hasWaiting={waitingList.length > 0}
           loading={actionLoading}
-          isAutoCallEnabled={isAutoCallEnabled}
-          onToggleAutoCall={setIsAutoCallEnabled}
+          isAutoCallEnabled={autoCall.isEnabled}
+          onToggleAutoCall={autoCall.setIsEnabled}
           queuePaused={queueInfo?.status === "paused"}
         />
 
@@ -423,8 +196,9 @@ const QueueDetailsPage = () => {
           <Paper
             elevation={0}
             sx={{
-              bgcolor: COLORS.paper,
-              border: `1px solid ${COLORS.border}`,
+              bgcolor: 'background.paper',
+              border: 1,
+              borderColor: 'divider',
               borderRadius: "12px",
               overflow: "hidden",
             }}
@@ -434,15 +208,15 @@ const QueueDetailsPage = () => {
               value={activeTab}
               onChange={(_, v) => setActiveTab(v)}
               sx={{
-                bgcolor: COLORS.paperLight,
-                "& .MuiTabs-indicator": { bgcolor: COLORS.white, height: 2 },
+                bgcolor: 'background.paperLight',
+                "& .MuiTabs-indicator": { bgcolor: 'primary.main', height: 2 },
                 "& .MuiTab-root": {
-                  color: COLORS.textMuted,
+                  color: 'text.secondary',
                   fontWeight: 500,
                   fontSize: "0.8rem",
                   textTransform: "none",
                   minHeight: 48,
-                  "&.Mui-selected": { color: COLORS.white },
+                  "&.Mui-selected": { color: 'primary.main' },
                 },
               }}
             >
@@ -451,7 +225,7 @@ const QueueDetailsPage = () => {
               <Tab icon={<DoneAllIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="Completed" />
             </Tabs>
 
-            <Divider sx={{ borderColor: COLORS.border }} />
+            <Divider sx={{ borderColor: 'divider' }} />
 
             {/* ---- TAB 0: WAITING ---- */}
             {activeTab === 0 && (
@@ -459,46 +233,46 @@ const QueueDetailsPage = () => {
                 <TableContainer>
                   <Table>
                     <TableHead>
-                      <TableRow sx={{ bgcolor: COLORS.paperLight }}>
-                        <TableCell sx={{ color: COLORS.textMuted }}>Pos</TableCell>
-                        <TableCell sx={{ color: COLORS.textMuted }}>Token</TableCell>
-                        <TableCell sx={{ color: COLORS.textMuted }}>Name</TableCell>
-                        <TableCell sx={{ color: COLORS.textMuted }}>Est. Wait</TableCell>
-                        <TableCell align="right" sx={{ color: COLORS.textMuted }}>Actions</TableCell>
+                      <TableRow sx={{ bgcolor: 'background.paperLight' }}>
+                        <TableCell sx={{ color: 'text.secondary' }}>Pos</TableCell>
+                        <TableCell sx={{ color: 'text.secondary' }}>Token</TableCell>
+                        <TableCell sx={{ color: 'text.secondary' }}>Name</TableCell>
+                        <TableCell sx={{ color: 'text.secondary' }}>Est. Wait</TableCell>
+                        <TableCell align="right" sx={{ color: 'text.secondary' }}>Actions</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {waitingList.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={5} align="center" sx={{ py: 6, borderBottom: "none" }}>
-                            <Typography variant="body2" sx={{ color: COLORS.textMuted }}>No customers waiting</Typography>
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>No customers waiting</Typography>
                           </TableCell>
                         </TableRow>
                       ) : (
                         waitingList.map((c, idx) => (
                           <Fade in timeout={300 + idx * 80} key={c._id || idx}>
-                            <TableRow sx={{ "&:hover": { bgcolor: COLORS.paperLight }, transition: "background-color 0.15s" }}>
+                            <TableRow sx={{ "&:hover": { bgcolor: 'background.paperLight' }, transition: "background-color 0.15s" }}>
                               <TableCell>
-                                <Typography variant="body2" sx={{ color: COLORS.textMuted, fontWeight: 600 }}>
-                                  {c.position || (waitingPage - 1) * ROWS_PER_PAGE + idx + 1}
+                                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                                  {c.position || (pagination.waiting.page - 1) * 5 + idx + 1}
                                 </Typography>
                               </TableCell>
                               <TableCell><TokenChip token={c.tokenNumber || c.token} /></TableCell>
                               <TableCell>
-                                <Typography variant="body2" sx={{ color: COLORS.text, fontWeight: 500 }}>{c.name}</Typography>
+                                <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 500 }}>{c.name}</Typography>
                               </TableCell>
                               <TableCell>
-                                <Typography variant="body2" sx={{ color: COLORS.amber, fontWeight: 500 }}>{c.estWait} min</Typography>
+                                <Typography variant="body2" sx={{ color: 'warning.main', fontWeight: 500 }}>{c.estWait} min</Typography>
                               </TableCell>
                               <TableCell align="right">
                                 <Box sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end" }}>
                                   <Tooltip title="Call Customer">
-                                    <IconButton size="small" onClick={() => handleCall(c.phone)} sx={{ color: COLORS.blue, "&:hover": { bgcolor: `${COLORS.blue}15` } }}>
+                                    <IconButton size="small" onClick={() => handleCall(c.phone)} sx={{ color: 'info.main', "&:hover": { bgcolor: (t) => `${t.palette.info.main}15` } }}>
                                       <PhoneIcon fontSize="small" />
                                     </IconButton>
                                   </Tooltip>
                                   <Tooltip title="Skip Customer">
-                                    <IconButton size="small" onClick={() => handleSkipRowOpen(c)} disabled={actionLoading} sx={{ color: COLORS.amber, "&:hover": { bgcolor: `${COLORS.amber}15` } }}>
+                                    <IconButton size="small" onClick={() => handleSkipRowOpen(c)} disabled={actionLoading} sx={{ color: 'warning.main', "&:hover": { bgcolor: (t) => `${t.palette.warning.main}15` } }}>
                                       <FastForwardIcon fontSize="small" />
                                     </IconButton>
                                   </Tooltip>
@@ -511,9 +285,9 @@ const QueueDetailsPage = () => {
                     </TableBody>
                   </Table>
                 </TableContainer>
-                {waitingTotalPages > 1 && (
+                {pagination.waiting.totalPages > 1 && (
                   <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-                    <Pagination count={waitingTotalPages} page={waitingPage} onChange={(_, v) => setWaitingPage(v)} shape="rounded" sx={paginationSx} />
+                    <Pagination count={pagination.waiting.totalPages} page={pagination.waiting.page} onChange={(_, v) => pagination.waiting.setPage(v)} shape="rounded" sx={paginationSx} />
                   </Box>
                 )}
               </Box>
@@ -525,40 +299,40 @@ const QueueDetailsPage = () => {
                 <TableContainer>
                   <Table>
                     <TableHead>
-                      <TableRow sx={{ bgcolor: COLORS.paperLight }}>
-                        <TableCell sx={{ color: COLORS.textMuted }}>Token</TableCell>
-                        <TableCell sx={{ color: COLORS.textMuted }}>Name</TableCell>
-                        <TableCell sx={{ color: COLORS.textMuted }}>Phone</TableCell>
-                        <TableCell align="right" sx={{ color: COLORS.textMuted }}>Actions</TableCell>
+                      <TableRow sx={{ bgcolor: 'background.paperLight' }}>
+                        <TableCell sx={{ color: 'text.secondary' }}>Token</TableCell>
+                        <TableCell sx={{ color: 'text.secondary' }}>Name</TableCell>
+                        <TableCell sx={{ color: 'text.secondary' }}>Phone</TableCell>
+                        <TableCell align="right" sx={{ color: 'text.secondary' }}>Actions</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {skippedList.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={4} align="center" sx={{ py: 6, borderBottom: "none" }}>
-                            <Typography variant="body2" sx={{ color: COLORS.textMuted }}>No skipped customers</Typography>
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>No skipped customers</Typography>
                           </TableCell>
                         </TableRow>
                       ) : (
                         skippedList.map((c, idx) => (
                           <Fade in timeout={300 + idx * 80} key={c._id || idx}>
-                            <TableRow sx={{ "&:hover": { bgcolor: COLORS.paperLight }, transition: "background-color 0.15s" }}>
-                              <TableCell><TokenChip token={c.tokenNumber || c.token} color={COLORS.amber} /></TableCell>
+                            <TableRow sx={{ "&:hover": { bgcolor: 'background.paperLight' }, transition: "background-color 0.15s" }}>
+                              <TableCell><TokenChip token={c.tokenNumber || c.token} color={theme.palette.warning.main} /></TableCell>
                               <TableCell>
-                                <Typography variant="body2" sx={{ color: COLORS.text, fontWeight: 500 }}>{c.name}</Typography>
+                                <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 500 }}>{c.name}</Typography>
                               </TableCell>
                               <TableCell>
-                                <Typography variant="body2" sx={{ color: COLORS.textMuted }}>{c.phone || "—"}</Typography>
+                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>{c.phone || "—"}</Typography>
                               </TableCell>
                               <TableCell align="right">
                                 <Box sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end" }}>
                                   <Tooltip title="Call Customer">
-                                    <IconButton size="small" onClick={() => handleCall(c.phone)} sx={{ color: COLORS.blue, "&:hover": { bgcolor: `${COLORS.blue}15` } }}>
+                                    <IconButton size="small" onClick={() => handleCall(c.phone)} sx={{ color: 'info.main', "&:hover": { bgcolor: (t) => `${t.palette.info.main}15` } }}>
                                       <PhoneIcon fontSize="small" />
                                     </IconButton>
                                   </Tooltip>
                                   <Tooltip title="Add Back to Queue">
-                                    <IconButton size="small" onClick={() => handleUndoSkip(c)} disabled={actionLoading} sx={{ color: COLORS.green, "&:hover": { bgcolor: `${COLORS.green}15` } }}>
+                                    <IconButton size="small" onClick={() => handleUndoSkip(c)} disabled={actionLoading} sx={{ color: 'success.main', "&:hover": { bgcolor: (t) => `${t.palette.success.main}15` } }}>
                                       <UndoIcon fontSize="small" />
                                     </IconButton>
                                   </Tooltip>
@@ -571,9 +345,9 @@ const QueueDetailsPage = () => {
                     </TableBody>
                   </Table>
                 </TableContainer>
-                {skippedTotalPages > 1 && (
+                {pagination.skipped.totalPages > 1 && (
                   <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-                    <Pagination count={skippedTotalPages} page={skippedPage} onChange={(_, v) => setSkippedPage(v)} shape="rounded" sx={paginationSx} />
+                    <Pagination count={pagination.skipped.totalPages} page={pagination.skipped.page} onChange={(_, v) => pagination.skipped.setPage(v)} shape="rounded" sx={paginationSx} />
                   </Box>
                 )}
               </Box>
@@ -585,33 +359,33 @@ const QueueDetailsPage = () => {
                 <TableContainer>
                   <Table>
                     <TableHead>
-                      <TableRow sx={{ bgcolor: COLORS.paperLight }}>
-                        <TableCell sx={{ color: COLORS.textMuted }}>Token</TableCell>
-                        <TableCell sx={{ color: COLORS.textMuted }}>Name</TableCell>
-                        <TableCell sx={{ color: COLORS.textMuted }}>Phone</TableCell>
-                        <TableCell sx={{ color: COLORS.textMuted }}>Completed At</TableCell>
+                      <TableRow sx={{ bgcolor: 'background.paperLight' }}>
+                        <TableCell sx={{ color: 'text.secondary' }}>Token</TableCell>
+                        <TableCell sx={{ color: 'text.secondary' }}>Name</TableCell>
+                        <TableCell sx={{ color: 'text.secondary' }}>Phone</TableCell>
+                        <TableCell sx={{ color: 'text.secondary' }}>Completed At</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {completedList.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={4} align="center" sx={{ py: 6, borderBottom: "none" }}>
-                            <Typography variant="body2" sx={{ color: COLORS.textMuted }}>No completed customers yet</Typography>
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>No completed customers yet</Typography>
                           </TableCell>
                         </TableRow>
                       ) : (
                         completedList.map((c, idx) => (
                           <Fade in timeout={300 + idx * 80} key={c._id || idx}>
-                            <TableRow sx={{ "&:hover": { bgcolor: COLORS.paperLight }, transition: "background-color 0.15s" }}>
-                              <TableCell><TokenChip token={c.tokenNumber || c.token} color={COLORS.purple} /></TableCell>
+                            <TableRow sx={{ "&:hover": { bgcolor: 'background.paperLight' }, transition: "background-color 0.15s" }}>
+                              <TableCell><TokenChip token={c.tokenNumber || c.token} color={theme.palette.custom.purple} /></TableCell>
                               <TableCell>
-                                <Typography variant="body2" sx={{ color: COLORS.text, fontWeight: 500 }}>{c.name}</Typography>
+                                <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 500 }}>{c.name}</Typography>
                               </TableCell>
                               <TableCell>
-                                <Typography variant="body2" sx={{ color: COLORS.textMuted }}>{c.phone || "—"}</Typography>
+                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>{c.phone || "—"}</Typography>
                               </TableCell>
                               <TableCell>
-                                <Typography variant="body2" sx={{ color: COLORS.textMuted }}>{c.completedAt || "—"}</Typography>
+                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>{c.completedAt || "—"}</Typography>
                               </TableCell>
                             </TableRow>
                           </Fade>
@@ -620,9 +394,9 @@ const QueueDetailsPage = () => {
                     </TableBody>
                   </Table>
                 </TableContainer>
-                {completedTotalPages > 1 && (
+                {pagination.completed.totalPages > 1 && (
                   <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-                    <Pagination count={completedTotalPages} page={completedPage} onChange={(_, v) => setCompletedPage(v)} shape="rounded" sx={paginationSx} />
+                    <Pagination count={pagination.completed.totalPages} page={pagination.completed.page} onChange={(_, v) => pagination.completed.setPage(v)} shape="rounded" sx={paginationSx} />
                   </Box>
                 )}
               </Box>
@@ -641,29 +415,29 @@ const QueueDetailsPage = () => {
           },
         }}
         PaperProps={{
-          sx: { bgcolor: COLORS.paperLight, border: `1px solid ${COLORS.border}`, borderRadius: "12px", minWidth: 360 },
+          sx: { bgcolor: 'background.paperLight', border: 1, borderColor: 'divider', borderRadius: "12px", minWidth: 360 },
         }}
       >
-        <DialogTitle sx={{ color: COLORS.white, fontWeight: 600, display: "flex", alignItems: "center", gap: 1 }}>
-          <SkipNextIcon sx={{ color: COLORS.amber }} /> Skip Customer
+        <DialogTitle sx={{ color: 'primary.main', fontWeight: 600, display: "flex", alignItems: "center", gap: 1 }}>
+          <SkipNextIcon sx={{ color: 'warning.main' }} /> Skip Customer
         </DialogTitle>
         <DialogContent>
-          <DialogContentText sx={{ color: COLORS.textMuted }}>
+          <DialogContentText sx={{ color: 'text.secondary' }}>
             Are you sure you want to skip{" "}
-            <strong style={{ color: COLORS.text }}>Token #{skipDialog.customer?.tokenNumber || skipDialog.customer?.token} ({skipDialog.customer?.name})</strong>?
+            <strong style={{ color: 'text.primary' }}>Token #{skipDialog.customer?.tokenNumber || skipDialog.customer?.token} ({skipDialog.customer?.name})</strong>?
             {skipDialog.type === "current"
               ? " The next person in queue will be called."
               : " This customer will be moved to the skipped list."}
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5 }}>
-          <Button onClick={handleSkipCancel} sx={{ color: COLORS.textMuted, "&:hover": { bgcolor: COLORS.border } }}>
+          <Button onClick={handleSkipCancel} sx={{ color: 'text.secondary', "&:hover": { bgcolor: 'divider' } }}>
             Cancel
           </Button>
           <Button
             onClick={handleSkipConfirm}
             variant="contained"
-            sx={{ bgcolor: COLORS.amber, color: COLORS.bg, fontWeight: 600, "&:hover": { bgcolor: "#d97706" } }}
+            sx={{ bgcolor: 'warning.main', color: 'background.default', fontWeight: 600, "&:hover": { bgcolor: "#d97706" } }}
           >
             Skip
           </Button>
