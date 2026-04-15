@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import { socket } from '../socket';
+import { socket } from '../utils/socket.js';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import {
   AppBar,

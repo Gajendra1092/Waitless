@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import { socket } from '../socket';
+import { socket } from '../utils/socket.js';
 import {
-  Box,
   Card,
   CardContent,
   Container,
@@ -12,7 +11,6 @@ import {
   Chip,
   LinearProgress,
   Alert,
-  Icon,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';

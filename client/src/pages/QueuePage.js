@@ -40,7 +40,7 @@ import {
   Close as CloseIcon,
   QueuePlayNext as QueueIcon,
 } from "@mui/icons-material";
-import { socket } from "../socket";
+import { socket } from "../utils/socket";
 import api from "../utils/api";
 
 const getStatusFromCount = (count, currentStatus) => {
