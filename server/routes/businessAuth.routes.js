@@ -88,13 +88,14 @@ router.post('/logout', verifyToken, (req, res) => {
 router.get('/profile', verifyToken, async (req, res) => {
   try {
     // Select the necessary fields including phone and address for the settings page
-    const business = await Business.findById(req.businessId).select('name email avatar phone address');
+    const business = await Business.findById(req.businessId).select('_id name email avatar phone address');
     
     if (!business) {
       return res.status(404).json({ message: 'Business not found' });
     }
     
     res.status(200).json({
+      id: business._id,
       name: business.name,
       email: business.email,
       phone: business.phone || '',

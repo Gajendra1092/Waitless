@@ -14,7 +14,7 @@ import {
 import { Menu as MenuIcon } from "@mui/icons-material";
 import AnalyticsPage from "./AnalyticsPage";
 import Sidebar from "../components/Sidebar";
-import QueuePage from "../components/QueuePage";
+import QueuePage from "./QueuePage";
 import SettingsPage from "./SettingsPage";
 
 // THEME
