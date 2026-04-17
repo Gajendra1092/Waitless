@@ -35,6 +35,11 @@ const customerSchema = new mongoose.Schema({
   },
 });
 
+// Optimization: Index queueId to quickly find customers in a specific queue
+customerSchema.index({ queueId: 1 });
+// Optimization: Compound index for fetching active customers (waiting/serving) in a queue
+customerSchema.index({ queueId: 1, status: 1 });
+
 const Customer = mongoose.model('Customer', customerSchema);
 
 export default Customer;
