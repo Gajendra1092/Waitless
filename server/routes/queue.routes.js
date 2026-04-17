@@ -230,6 +230,11 @@ router.post('/:queueId/complete', verifyToken, async (req, res) => {
     customer.servedAt = new Date();
     await customer.save();
 
+    // Invalidate Cache
+    if (req.redis) {
+        await req.redis.del(`analytics:${req.businessId}`);
+    }
+
     req.io.to(req.params.queueId).emit('queue-updated');
 
     res.status(200).json({ message: 'Marked as completed', customer });
@@ -250,6 +255,11 @@ router.post('/:queueId/skip-current', verifyToken, async (req, res) => {
     customer.status = 'skipped';
     await customer.save();
 
+    // Invalidate Cache
+    if (req.redis) {
+        await req.redis.del(`analytics:${req.businessId}`);
+    }
+
     req.io.to(req.params.queueId).emit('queue-updated');
 
     res.status(200).json({ message: 'Current customer skipped', customer });
@@ -269,6 +279,11 @@ router.post('/:queueId/skip', verifyToken, async (req, res) => {
 
     customer.status = 'skipped';
     await customer.save();
+
+    // Invalidate Cache
+    if (req.redis) {
+        await req.redis.del(`analytics:${req.businessId}`);
+    }
 
     // Decrement position of subsequent waiting customers
     await Customer.updateMany(
@@ -341,6 +356,15 @@ router.get('/:queueId', async (req, res) => {
 router.get('/analytics/data', verifyToken, async (req, res) => {
   try {
     const businessId = req.businessId;
+    const cacheKey = `analytics:${businessId}`;
+
+    // Try to get from Redis
+    if (req.redis) {
+      const cachedData = await req.redis.get(cacheKey);
+      if (cachedData) {
+        return res.status(200).json(JSON.parse(cachedData));
+      }
+    }
     
     // 1. Get all queues for this business
     const queues = await Queue.find({ businessId }).lean();
@@ -384,7 +408,14 @@ router.get('/analytics/data', verifyToken, async (req, res) => {
         return { name: q.name, value: count };
     }));
 
-    res.status(200).json({ totalCompleted, totalSkipped, avgWait, weeklyTrend: weeklyTrendRaw.map(w => ({ date: w._id, customers: w.count })), queueDistribution: queueDistribution.filter(q => q.value > 0) });
+    const responseData = { totalCompleted, totalSkipped, avgWait, weeklyTrend: weeklyTrendRaw.map(w => ({ date: w._id, customers: w.count })), queueDistribution: queueDistribution.filter(q => q.value > 0) };
+
+    // Store in Redis for 5 minutes (300 seconds)
+    if (req.redis) {
+      await req.redis.setEx(cacheKey, 300, JSON.stringify(responseData));
+    }
+
+    res.status(200).json(responseData);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

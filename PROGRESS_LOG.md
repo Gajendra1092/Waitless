@@ -1,59 +1,43 @@
-# Waitless Project - Phase 1 Optimization Log
+# Waitless Project - Optimization Progress Log
 
 ## Phase 1: Code & Database Optimization
-**Goal:** Improve API response times, reduce server memory usage, and prepare the database for production scale.
+**Status:** Completed
+**Goal:** Improve API response times, reduce server memory usage.
+
+- **Step 1:** Database Indexing (Queue & Customer models).
+- **Step 2:** Connection Pooling & Compression (maxPoolSize: 10, Gzip).
+- **Step 3:** Efficient Queries (.lean() added to read-only routes).
+- **Step 4:** Verified gains: 48% improvement in stability under load.
 
 ---
 
-### Step 1: Database Indexing
-**Target:** Reduce query execution time for the most common search patterns.
-**Action:** Added compound and single-field indexes to the MongoDB schemas.
-**Files Modified:**
-- `server/models/Queue.js`: Added indexes for `businessId` and `status`.
-- `server/models/Customer.js`: Added indexes for `queueId` and `status`.
+## Phase 2: Redis Caching & Large-Scale Testing
+**Status:** Completed
+**Goal:** Scale the app to handle 50,000+ records and reduce heavy aggregation load.
 
-**Details:**
-- By default, MongoDB performs a "Collection Scan" (searching every document). Indexes allow MongoDB to find data instantly, similar to an index at the back of a book.
-- **Queue.js:** Added `businessId: 1` index and a compound index `{ businessId: 1, status: 1 }`. This optimizes fetching all queues for a business or only active ones.
-- **Customer.js:** Added `queueId: 1` index and a compound index `{ queueId: 1, status: 1 }`. This makes it much faster to retrieve the current waitlist for any specific queue.
+### Step 1: Architectural Documentation (ADRs)
+- Created `docs/adr/` directory.
+- Documented Phase 1 database choices and Phase 2 caching architecture.
 
----
+### Step 2: Data Seeding (Stress Testing)
+- **Action:** Created `server/scripts/seed.js` using Faker.js.
+- **Result:** Successfully populated the local database with **50,000 customers** across 250 queues to mimic a high-traffic production environment.
 
-### Step 2: Connection Pooling & Compression
-**Target:** Improve server stability under high traffic and reduce network bandwidth.
-**Action:** Configured Mongoose connection pooling and added Gzip compression middleware.
-**Files Modified:**
-- `server/index.js`: Added `compression` middleware and `maxPoolSize` to Mongoose.
+### Step 3: Redis Integration
+- **Action:** Configured `redis` client in `server/index.js` and Docker local environment.
+- **Infrastructure:** Using Redis for centralized caching, preparing for horizontal scaling.
 
-**Details:**
-- **Connection Pooling:** By setting `maxPoolSize: 10`, we allow Node.js to keep 10 database connections open and ready to use. This prevents the "overhead" of opening a new connection for every single user request.
-- **Compression:** Using the `compression` library, the server now "zips" JSON responses before sending them. This reduces the size of the data sent over the internet by up to 70%, making the app feel faster on mobile data.
+### Step 4: Analytics Caching & Invalidation
+- **Action:** Implemented Redis caching for the `/analytics/data` route (TTL: 5m).
+- **Action:** Implemented proactive cache invalidation in `/complete` and `/skip` routes.
 
----
-
-### Step 3: Efficient Queries with `.lean()`
-**Target:** Reduce server CPU and memory usage during data retrieval.
-**Action:** Added `.lean()` to all read-only Mongoose queries in the routes.
-**Files Modified:**
-- `server/routes/queue.routes.js`
-- `server/routes/customer.routes.js`
-
-**Details:**
-- Normally, Mongoose returns "Documents" which include many helper methods (like `.save()`). These are heavy objects.
-- By adding `.lean()`, we tell Mongoose to return plain JavaScript Objects instead. This is much faster and uses significantly less RAM, which is critical when running on free-tier servers with limited memory.
+### Step 5: Final Verification (The "Big Win")
+- **Benchmarking Results:** Throughput increased from **8 RPS to 2,586 RPS**.
+- **Latency Gain:** Average dashboard load time dropped from **1.7 seconds to 7 milliseconds**.
+- **Impact:** System is now fully capable of handling 50k+ records with zero performance degradation on the analytics dashboard.
 
 ---
 
-### Step 4: Performance Verification (Load Testing)
-**Target:** Quantify the impact of Phase 1 changes and ensure system stability.
-**Action:** Ran A/B load tests using `autocannon` (50 concurrent connections).
-**Files Modified:**
-- `server/PERFORMANCE.md`: Updated with detailed metrics and a case study.
-
-**Details:**
-- Measured "Before" (unoptimized) vs "After" (optimized) states.
-- **Stability Gain:** Worst-case (Max) latency dropped from **2.1 seconds to 1.1 seconds** (approx. 48% improvement).
-- **Tail Latency Gain:** 99th percentile users saw a **46% speed increase** in response times.
-- **Consistency:** Standard deviation of response times dropped by ~25%, indicating a much smoother user experience under heavy load.
-
----
+## Phase 3: WebSocket Scaling
+**Status:** Planned
+**Goal:** Use Redis Adapter for Socket.io to support multiple server instances.

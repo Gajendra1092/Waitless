@@ -5,6 +5,14 @@ import cors from 'cors';
 import http from 'http';
 import { Server } from 'socket.io';
 import mongoose from 'mongoose';
+import { createClient } from 'redis';
+
+const redisClient = createClient({
+  url: process.env.REDIS_URL || 'redis://localhost:6379'
+});
+
+redisClient.on('error', err => console.error('Redis Client Error', err));
+await redisClient.connect().then(() => console.log('Redis connected')).catch(err => console.log('Redis connection skipped/failed:', err.message));
 
 mongoose.connect(process.env.MONGO_URI, {
   maxPoolSize: 10, // Maintain up to 10 static connections
@@ -39,6 +47,7 @@ app.use(cors({
 
 app.use((req, res, next) => {
   req.io = io;
+  req.redis = redisClient;
   next();
 });
 
