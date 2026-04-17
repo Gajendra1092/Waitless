@@ -44,7 +44,7 @@ router.post('/:queueId/join', async (req, res) => {
 
 router.get('/:customerId', async (req, res) => {
   try {
-    const customer = await Customer.findById(req.params.customerId);
+    const customer = await Customer.findById(req.params.customerId).lean();
     if (!customer) {
       return res.status(404).json({ message: 'Customer not found' });
     }
