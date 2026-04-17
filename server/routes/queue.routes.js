@@ -320,7 +320,7 @@ router.post('/:queueId/undo-skip', verifyToken, async (req, res) => {
 //Public Routes
 router.get('/:queueId', async (req, res) => {
   try {
-    const queue = await Queue.findById(req.params.queueId);
+    const queue = await Queue.findById(req.params.queueId).lean();
     if (!queue) {
       return res.status(404).json({ message: 'Queue not found' });
     }
@@ -328,7 +328,7 @@ router.get('/:queueId', async (req, res) => {
       queueId: req.params.queueId,
       status: 'waiting',
     });
-    res.status(200).json({ ...queue.toObject(), waitingCount });
+    res.status(200).json({ ...queue, waitingCount });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }
@@ -343,7 +343,7 @@ router.get('/analytics/data', verifyToken, async (req, res) => {
     const businessId = req.businessId;
     
     // 1. Get all queues for this business
-    const queues = await Queue.find({ businessId });
+    const queues = await Queue.find({ businessId }).lean();
     const queueIds = queues.map(q => q._id);
 
     if (queueIds.length === 0) {
@@ -358,7 +358,7 @@ router.get('/analytics/data', verifyToken, async (req, res) => {
     const totalSkipped = await Customer.countDocuments({ queueId: { $in: queueIds }, status: 'skipped', updatedAt: { $gte: startOfDay } });
     
     // Calculate Average Wait Time for today (Difference between joinedAt and servedAt)
-    const completedToday = await Customer.find({ queueId: { $in: queueIds }, status: 'completed', servedAt: { $gte: startOfDay } });
+    const completedToday = await Customer.find({ queueId: { $in: queueIds }, status: 'completed', servedAt: { $gte: startOfDay } }).lean();
     let totalWaitTimeMs = 0;
     completedToday.forEach(c => {
       if (c.createdAt && c.servedAt) {
