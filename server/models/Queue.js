@@ -40,6 +40,11 @@ const queueSchema = new mongoose.Schema({
   },
 });
 
+// Optimization: Index businessId for fast lookup of queues belonging to a specific business
+queueSchema.index({ businessId: 1 });
+// Optimization: Compound index for filtering running queues by business
+queueSchema.index({ businessId: 1, status: 1 });
+
 const Queue = mongoose.model('Queue', queueSchema);
 
 export default Queue;
