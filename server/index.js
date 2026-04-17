@@ -1,18 +1,22 @@
 import 'dotenv/config';
 import express from 'express';
+import compression from 'compression';
 import cors from 'cors';
 import http from 'http';
 import { Server } from 'socket.io';
 import mongoose from 'mongoose';
 
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB connected'))
+mongoose.connect(process.env.MONGO_URI, {
+  maxPoolSize: 10, // Maintain up to 10 static connections
+})
+  .then(() => console.log('MongoDB connected with pool size 10'))
   .catch(err => {
     console.error('MongoDB connection error:', err);
     process.exit(1);
   });
 
 const app = express();
+app.use(compression()); // Compress all responses
 const PORT = process.env.PORT || 5000;
 const httpServer = http.createServer(app);
 
