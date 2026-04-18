@@ -45,3 +45,24 @@ The offloading of heavy reads to Redis resulted in a monumental performance leap
 
 **Why this matters:**
 This optimization ensures the application can handle thousands of concurrent administrative users without stressing the primary database. MongoDB's CPU is now preserved for critical write operations (joining the queue).
+
+---
+
+## Optimization Case Study: Phase 3 (WebSocket Horizontal Scaling)
+
+### The Problem
+Standard WebSockets are stateful and tied to the memory of a single server. In a multi-server production environment, a user on Server A would not receive live updates triggered by an action on Server B, breaking the "WaitLess" live-tracking experience.
+
+### The Solution
+We implemented the **Socket.io Redis Adapter**. This uses a Publisher/Subscriber model where every server instance broadcasts its events to Redis, and Redis ensures those events are echoed to every other server instance in the cluster.
+
+### The Verification (Cross-Instance Test)
+We performed a successful simulation of a distributed cluster:
+1. **Server A** and **Server B** were started as independent processes.
+2. A client connected to **Server A**.
+3. An update was triggered on **Server B**.
+4. **Result:** The client on Server A received the update via the Redis bridge.
+
+**Why this matters:**
+This architectural shift is a prerequisite for high availability. We can now deploy the app to Docker clusters or Kubernetes without losing real-time functionality.
+
