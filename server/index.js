@@ -2,31 +2,34 @@ import 'dotenv/config';
 import express from 'express';
 import compression from 'compression';
 import cors from 'cors';
-import http from 'http';
+import { createServer } from 'http';
 import { Server } from 'socket.io';
+import { createAdapter } from '@socket.io/redis-adapter';
 import mongoose from 'mongoose';
 import { createClient } from 'redis';
 
-const redisClient = createClient({
-  url: process.env.REDIS_URL || 'redis://localhost:6379'
-});
+// Redis setup for Caching and Socket.io Adapter
+const redisClient = createClient({ url: process.env.REDIS_URL || 'redis://localhost:6379' });
+const pubClient = redisClient.duplicate();
+const subClient = redisClient.duplicate();
 
 redisClient.on('error', err => console.error('Redis Client Error', err));
-await redisClient.connect().then(() => console.log('Redis connected')).catch(err => console.log('Redis connection skipped/failed:', err.message));
+await redisClient.connect().catch(err => console.log('Redis Caching connection failed:', err.message));
+await Promise.all([pubClient.connect(), subClient.connect()]).then(() => console.log('Redis Adapter connected')).catch(err => console.log('Redis Adapter connection failed:', err.message));
 
 mongoose.connect(process.env.MONGO_URI, {
-  maxPoolSize: 10, // Maintain up to 10 static connections
+  maxPoolSize: 10,
 })
-  .then(() => console.log('MongoDB connected with pool size 10'))
+  .then(() => console.log('MongoDB connected'))
   .catch(err => {
     console.error('MongoDB connection error:', err);
     process.exit(1);
   });
 
 const app = express();
-app.use(compression()); // Compress all responses
+app.use(compression());
 const PORT = process.env.PORT || 5000;
-const httpServer = http.createServer(app);
+const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
   cors: {
@@ -34,6 +37,9 @@ const io = new Server(httpServer, {
     methods: ["GET", "POST"]
   }
 });
+
+// Attach Redis Adapter for horizontal scaling
+io.adapter(createAdapter(pubClient, subClient));
 
 import queueRoutes from './routes/queue.routes.js';
 import customerRoutes from './routes/customer.routes.js';
