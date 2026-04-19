@@ -32,6 +32,18 @@ services:
     depends_on:
       - api
 
+  # Background Worker
+  worker:
+    build: ./server
+    container_name: waitless-worker
+    command: node worker.js
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/waitless
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - mongodb
+      - redis
+
   # The Traffic Cop (Nginx Load Balancer)
   nginx:
     image: nginx:stable-alpine
