@@ -12,6 +12,8 @@ This document tracks the backend and database performance metrics over time. Our
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | 2026-04-17 | `phase-1-opt` | DB Indexing, .lean(), Compression, Pooling | 1100ms -> 1085ms | 49.4 -> 50.0 | 2122ms -> 1095ms | 2028ms -> 1091ms |
 | 2026-04-17 | `phase-2-redis` | Redis Server-Side Caching (Analytics Route) | 2231ms -> 13ms | 8.2 -> 2586.4 | 2247ms -> 66ms | 2247ms -> 17ms |
+| 2026-04-17 | `phase-3-ws` | Socket.io Redis Adapter | N/A | N/A | N/A | N/A |
+| 2026-04-17 | `phase-4-infra` | Docker Cluster & Nginx Load Balancing | N/A | N/A | High | N/A |
 
 ## Optimization Case Study: Phase 1 (Database & API Stability)
 
@@ -66,3 +68,17 @@ We performed a successful simulation of a distributed cluster:
 **Why this matters:**
 This architectural shift is a prerequisite for high availability. We can now deploy the app to Docker clusters or Kubernetes without losing real-time functionality.
 
+---
+
+## Optimization Case Study: Phase 4 (Containerization & High Availability)
+
+### The Problem
+Managing multiple services manually is unstable. A single-server architecture has a single point of failure and cannot scale to meet user demand.
+
+### The Solution
+Implemented a Docker Compose architecture with Nginx as a Load Balancer.
+
+### The Result
+*   **Infrastructure Scale:** The application can now handle 3x more traffic by running 3 API instances.
+*   **Stability:** If one API container crashes, Nginx automatically routes traffic to the remaining healthy containers.
+*   **Fix (Sticky Sessions):** Resolved WebSocket connection drops by implementing `ip_hash`, ensuring stateful connections remain pinned to a specific server instance.
