@@ -1,7 +1,7 @@
 # ADR 005: Implement Message Queue for Asynchronous Tasks
 
 ## Status
-Proposed
+Accepted
 
 ## Context
 Currently, the application performs all tasks synchronously within the API request cycle. For example, if we were to send an Email or SMS when a customer joins a queue, the user would have to wait for that external service to respond before receiving their token. This creates a "bottleneck" that increases API latency and makes the system fragile (if the email service is slow, the whole app feels slow).

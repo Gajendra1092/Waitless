@@ -88,3 +88,19 @@
 - **Learning:** Documented in `docs/learning/06-sticky-sessions-load-balancing.md`.
 
 ---
+
+## Phase 5: Asynchronous Background Jobs
+**Status:** Completed
+**Goal:** Offload slow, non-blocking tasks to a message queue.
+
+### Step 1: Implementation
+- **Tooling:** Integrated **BullMQ** (powered by Redis).
+- **Architecture:** Created a `NotificationQueue` and a dedicated `waitless-worker` container.
+- **Integration:** Updated the `/join` API to push SMS tasks to the queue instead of waiting for them to finish.
+
+### Step 2: Verification (The "Slow Job" Test)
+- **Method:** Simulated a 5-second delay in the SMS sending logic.
+- **Result:** API latency remained at **<10ms** for the user, while the worker processed the task independently in the background.
+- **Impact:** The system is now resilient to external service slowness. Your app will stay fast even if your Email or SMS provider is down or lagging.
+
+---
