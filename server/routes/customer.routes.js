@@ -1,6 +1,7 @@
 import express from 'express';
 import Queue from '../models/Queue.js';
 import Customer from '../models/Customer.js';
+import notificationQueue from '../queues/notificationQueue.js';
 
 const router = express.Router();
 
@@ -35,6 +36,15 @@ router.post('/:queueId/join', async (req, res) => {
     });
 
     await newCustomer.save();
+
+    // PHASE 5: Add background job for SMS notification
+    // We DON'T await this because we want the response to be instant
+    notificationQueue.add('send-sms', {
+      phone,
+      name,
+      tokenNumber: newCustomer.tokenNumber
+    }).catch(err => console.error('Failed to add job to queue:', err));
+
     req.io.to(req.params.queueId).emit('queue-updated');
     res.status(201).json(newCustomer);
   } catch (error) {
