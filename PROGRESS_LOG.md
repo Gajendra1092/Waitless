@@ -104,3 +104,25 @@
 - **Impact:** The system is now resilient to external service slowness. Your app will stay fast even if your Email or SMS provider is down or lagging.
 
 ---
+
+## Phase 6: Advanced Authentication (Access/Refresh Tokens)
+**Status:** Completed
+**Goal:** Implement a secure, stateful authentication system with instant revocation.
+
+### Step 1: Split-Token Implementation
+- **Access Token:** Short-lived (15m) JWT sent via headers to defeat CSRF.
+- **Refresh Token:** Long-lived (7d) JWT sent via **HttpOnly Cookie** to defeat XSS.
+
+### Step 2: Session Management (Redis)
+- **Action:** Stored valid Refresh Tokens in Redis.
+- **Benefit:** Enables instant session revocation (Logout from all devices) and protects against stolen tokens.
+
+### Step 3: Silent Refresh (Axios Interceptor)
+- **Action:** Implemented a response interceptor in `client/src/utils/api.js`.
+- **Result:** Frontend automatically detects expired access tokens and silently fetches new ones without the user needing to log in again.
+
+### Step 4: Security Hardening
+- **Middleware:** Updated `verifyToken` to return specific error codes (`TOKEN_EXPIRED`).
+- **Token Rotation:** Each refresh issues a brand new Refresh Token, further securing the session.
+
+---
