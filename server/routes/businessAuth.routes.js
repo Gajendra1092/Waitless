@@ -7,14 +7,19 @@ import { verifyToken } from '../middleware/auth.js';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'jwt_secret';
+const REFRESH_SECRET = process.env.REFRESH_SECRET || 'refresh_secret';
 
-const tokenBlacklist = new Set();
+// Helper to generate tokens
+const generateTokens = (id) => {
+  const accessToken = jwt.sign({ id }, JWT_SECRET, { expiresIn: '15m' });
+  const refreshToken = jwt.sign({ id }, REFRESH_SECRET, { expiresIn: '7d' });
+  return { accessToken, refreshToken };
+};
+
 // Signup route
 router.post('/signup', async (req, res) => {
   try {
-
     const { name, email, password, phone, address } = req.body;
-
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Name, email, and password are required' });
     }
@@ -24,22 +29,25 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ message: 'Business already exists' });
     }
 
-    const newBusiness = new Business({
-      name, 
-      email, 
-      password, 
-      phone, 
-      address,
-    });
-
+    const newBusiness = new Business({ name, email, password, phone, address });
     await newBusiness.save();
 
-    const token = jwt.sign({ id: newBusiness._id }, JWT_SECRET);
+    const { accessToken, refreshToken } = generateTokens(newBusiness._id);
 
-    res.status(201).json({ token, business: newBusiness });
+    // Store refresh token in Redis (7 days TTL)
+    if (req.redis) {
+        await req.redis.setEx(`refresh_token:${newBusiness._id}`, 7 * 24 * 60 * 60, refreshToken);
+    }
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
+    res.status(201).json({ accessToken, business: { id: newBusiness._id, name: newBusiness.name, email: newBusiness.email } });
   } catch (error) {
-    console.log("Error details:", error.message);
-    console.log("Full error:", error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -53,34 +61,77 @@ router.post('/login', async (req, res) => {
     }
     
     const business = await Business.findOne({ email });
-    if (!business) {
+    if (!business || !(await bcryptjs.compare(password, business.password))) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
     
-    const isValidPassword = await bcryptjs.compare(password, business.password);
-    if (!isValidPassword) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+    const { accessToken, refreshToken } = generateTokens(business._id);
+
+    // Store refresh token in Redis
+    if (req.redis) {
+        await req.redis.setEx(`refresh_token:${business._id}`, 7 * 24 * 60 * 60, refreshToken);
     }
-    
-    const token = jwt.sign({ id: business._id }, JWT_SECRET);
-    res.status(200).json({ token, business });
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
+    res.status(200).json({ accessToken, business: { id: business._id, name: business.name, email: business.email } });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Refresh token route
+router.post('/refresh', async (req, res) => {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken) return res.status(401).json({ message: 'Refresh token missing' });
+
+    const decoded = jwt.verify(refreshToken, REFRESH_SECRET);
+    
+    // Verify against Redis
+    if (req.redis) {
+        const storedToken = await req.redis.get(`refresh_token:${decoded.id}`);
+        if (storedToken !== refreshToken) {
+            return res.status(403).json({ message: 'Refresh token revoked or invalid' });
+        }
+    }
+
+    const { accessToken, refreshToken: newRefreshToken } = generateTokens(decoded.id);
+
+    // Update Redis with new refresh token (Token Rotation)
+    if (req.redis) {
+        await req.redis.setEx(`refresh_token:${decoded.id}`, 7 * 24 * 60 * 60, newRefreshToken);
+    }
+
+    res.cookie('refreshToken', newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
+    res.status(200).json({ accessToken });
+  } catch (error) {
+    res.status(403).json({ message: 'Invalid refresh token' });
   }
 });
 
 // Logout route
-router.post('/logout', verifyToken, (req, res) => {
+router.post('/logout', verifyToken, async (req, res) => {
   try {
-    res.status(200).json({ 
-      success: true, 
-      message: 'Logout successful' 
-    });
+    // Delete from Redis
+    if (req.redis) {
+        await req.redis.del(`refresh_token:${req.businessId}`);
+    }
+    res.clearCookie('refreshToken');
+    res.status(200).json({ success: true, message: 'Logout successful' });
   } catch (error) {
-    res.status(500).json({ 
-      message: 'Server error', 
-      error: error.message 
-    });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
