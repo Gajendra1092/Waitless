@@ -473,7 +473,7 @@ function AuthSection({ demoFill }) {
     setLoading(true);
     try {
       const res = await axios.post('/api/business/login', loginData);
-      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('accessToken', res.data.accessToken);
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please try again.');
@@ -491,7 +491,7 @@ function AuthSection({ demoFill }) {
         name: signupData.name, email: signupData.email,
         password: signupData.password, phone: signupData.phone, address: signupData.address,
       });
-      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('accessToken', res.data.accessToken);
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Signup failed. Please try again.');
