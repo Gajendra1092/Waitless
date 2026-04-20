@@ -64,4 +64,21 @@ router.get('/:customerId', async (req, res) => {
   }
 });
 
+router.patch('/:customerId/call', async (req, res) => {
+  try {
+    const customer = await Customer.findByIdAndUpdate(
+      req.params.customerId,
+      { status: 'serving' },
+      { new: true }
+    );
+    if (!customer) {
+      return res.status(404).json({ message: 'Customer not found' });
+    }
+
+    req.io.to(customer.queueId.toString()).emit('queue-updated');
+    res.status(200).json(customer);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+});
 export default router;
