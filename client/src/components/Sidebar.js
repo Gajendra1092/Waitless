@@ -56,7 +56,7 @@ const Sidebar = ({ open, onClose, isMobile }) => {
       console.error("Logout error:", err.message);
     }
     localStorage.removeItem("accessToken");
-    window.location.href = "/login";
+    window.location.href = "/";
   };
 
   const drawerContent = (
