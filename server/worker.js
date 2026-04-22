@@ -3,9 +3,13 @@ import 'dotenv/config';
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 
+const redisUrl = new URL(REDIS_URL);
 const redisConnection = {
-  host: new URL(REDIS_URL).hostname,
-  port: parseInt(new URL(REDIS_URL).port) || 6379,
+  host: redisUrl.hostname,
+  port: parseInt(redisUrl.port) || 6379,
+  username: redisUrl.username || undefined,
+  password: redisUrl.password || undefined,
+  tls: redisUrl.protocol === 'rediss:' ? {} : undefined,
 };
 
 console.log('🚀 Worker started. Waiting for jobs...');
