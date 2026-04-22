@@ -49,6 +49,8 @@ const styles = {
 const AnalyticsPage = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [aiInsights, setAiInsights] = useState([]);
+  const [loadingAi, setLoadingAi] = useState(true);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -57,7 +59,6 @@ const AnalyticsPage = () => {
         setData(res.data);
       } catch (err) {
         console.error("Failed to fetch analytics", err);
-        // Show zeroed out data if API fails
         setData({
           totalCompleted: 0,
           totalSkipped: 0,
@@ -69,30 +70,25 @@ const AnalyticsPage = () => {
         setLoading(false);
       }
     };
+
+    const fetchAiInsights = async () => {
+      try {
+        setLoadingAi(true);
+        const res = await api.get("/api/queue/analytics/ai-insights");
+        setAiInsights(res.data);
+      } catch (err) {
+        console.error("Failed to fetch AI insights", err);
+        setAiInsights([{ text: "Insights are currently unavailable. Try again later.", type: "info" }]);
+      } finally {
+        setLoadingAi(false);
+      }
+    };
+
     fetchAnalytics();
+    fetchAiInsights();
   }, []);
 
   const PIE_COLORS = ["#00E5FF", "#7B61FF", "#00FF94", "#f59e0b"];
-
-  // Generate "Smart" Insights based on the data
-  const getInsights = () => {
-    if (!data) return [];
-    const insights = [];
-    if (data.totalSkipped > data.totalCompleted * 0.15) {
-      insights.push({ text: "High skip rate detected today. Customers might be abandoning the queue due to long wait times.", type: "warning" });
-    } else {
-      insights.push({ text: "Your completion-to-skip ratio looks very healthy today!", type: "success" });
-    }
-    if (data.avgWait > 20) {
-      insights.push({ text: "Average wait time is above 20 minutes. Consider opening an additional counter.", type: "warning" });
-    }
-    if (data.weeklyTrend.length >= 2) {
-      const today = data.weeklyTrend[data.weeklyTrend.length - 1]?.customers || 0;
-      const yesterday = data.weeklyTrend[data.weeklyTrend.length - 2]?.customers || 0;
-      if (today > yesterday) insights.push({ text: `Traffic is up! You've served ${today - yesterday} more customers than yesterday.`, type: "info" });
-    }
-    return insights.length ? insights : [{ text: "Gathering more data to generate insights...", type: "info" }];
-  };
 
   if (loading) {
     return (
@@ -101,8 +97,6 @@ const AnalyticsPage = () => {
       </Box>
     );
   }
-
-  const insights = getInsights();
 
   return (
     <Box sx={styles.pageContainer}>
@@ -117,19 +111,26 @@ const AnalyticsPage = () => {
         <StatCard icon={<TimerIcon />} label="Avg Wait (Mins)" value={data.avgWait} color="#00E5FF" delay={200} />
       </Box>
 
-      {/* Smart Insights (AI Placeholder) */}
+      {/* Smart Insights (AI Powered) */}
       <Paper sx={styles.insightsCard}>
         <Box sx={styles.insightsGlow} />
         <Typography variant="h6" sx={styles.insightsTitle}>
           <LightbulbIcon sx={styles.insightsTitleIcon} /> Smart Insights
         </Typography>
         <Box sx={styles.insightsList}>
-          {insights.map((insight, idx) => (
-            <Box key={idx} sx={styles.insightItem(insight.type)}>
-              <AutoGraphIcon sx={styles.insightIcon} />
-              <Typography variant="body2" sx={styles.insightText}>{insight.text}</Typography>
+          {loadingAi ? (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, p: 2 }}>
+              <CircularProgress size={20} sx={{ color: "#7B61FF" }} />
+              <Typography variant="body2" sx={{ color: "#8a8a8a" }}>AI is analyzing your business data...</Typography>
             </Box>
-          ))}
+          ) : (
+            aiInsights.map((insight, idx) => (
+              <Box key={idx} sx={styles.insightItem(insight.type)}>
+                <AutoGraphIcon sx={styles.insightIcon} />
+                <Typography variant="body2" sx={styles.insightText}>{insight.text}</Typography>
+              </Box>
+            ))
+          )}
         </Box>
       </Paper>
 
