@@ -2,8 +2,12 @@ import express from 'express';
 import Queue from '../models/Queue.js';
 import Customer from '../models/Customer.js';
 import { verifyToken } from '../middleware/auth.js';
+import { GoogleGenAI } from '@google/genai';
 
 const router = express.Router();
+
+// Initialize Gemini (automatically uses GEMINI_API_KEY from env)
+const ai = new GoogleGenAI({});
 
 //Protected Routes
 router.post('/create',verifyToken, async (req, res) => {
@@ -353,6 +357,69 @@ router.get('/:queueId', async (req, res) => {
 // ========================
 // ANALYTICS ROUTES
 // ========================
+router.get('/analytics/ai-insights', verifyToken, async (req, res) => {
+  try {
+    const businessId = req.businessId;
+    
+    // 1. Fetch data for analysis (reuse logic from /analytics/data)
+    const queues = await Queue.find({ businessId }).lean();
+    const queueIds = queues.map(q => q._id);
+
+    if (queueIds.length === 0) {
+      return res.status(200).json([{ text: "Create your first queue to start receiving AI-powered business insights!", type: "info" }]);
+    }
+
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const totalCompleted = await Customer.countDocuments({ queueId: { $in: queueIds }, status: 'completed', servedAt: { $gte: startOfDay } });
+    const totalSkipped = await Customer.countDocuments({ queueId: { $in: queueIds }, status: 'skipped', updatedAt: { $gte: startOfDay } });
+    
+    const completedToday = await Customer.find({ queueId: { $in: queueIds }, status: 'completed', servedAt: { $gte: startOfDay } }).lean();
+    let totalWaitTimeMs = 0;
+    completedToday.forEach(c => {
+      if (c.createdAt && c.servedAt) totalWaitTimeMs += (new Date(c.servedAt) - new Date(c.createdAt));
+    });
+    const avgWait = completedToday.length > 0 ? Math.round(totalWaitTimeMs / completedToday.length / 60000) : 0;
+
+    // 2. Call Gemini for Analysis using the new SDK and Model
+    const prompt = `
+      You are a professional business efficiency consultant for a queue management system named 'WaitLess'.
+      Analyze the following real-time data for a business today and provide exactly 3 actionable insights.
+      
+      DATA:
+      - Total Customers Served: ${totalCompleted}
+      - Total Customers Skipped: ${totalSkipped}
+      - Average Wait Time: ${avgWait} minutes
+      - Total Active Queues: ${queues.length}
+      
+      INSTRUCTIONS:
+      - Return the response as a valid JSON array of objects.
+      - Each object must have:
+        1. "text": (string) The insight or recommendation.
+        2. "type": (string) one of ["success", "warning", "info"].
+      - Keep insights brief, professional, and data-driven.
+      - Return ONLY the raw JSON array. No markdown, no backticks, no explanatory text.
+    `;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+    });
+    
+    const text = response.text;
+    
+    // Clean and parse the response
+    const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    const aiInsights = JSON.parse(cleanedText);
+
+    res.status(200).json(aiInsights);
+  } catch (error) {
+    console.error("Gemini Error:", error);
+    res.status(200).json([{ text: "AI insights are temporarily unavailable. Gathering more data...", type: "info" }]);
+  }
+});
+
 router.get('/analytics/data', verifyToken, async (req, res) => {
   try {
     const businessId = req.businessId;
