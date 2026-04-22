@@ -3,11 +3,12 @@ import { faker } from '@faker-js/faker';
 import 'dotenv/config';
 import Queue from '../models/Queue.js';
 import Customer from '../models/Customer.js';
+import Business from '../models/Business.js';
 
 const SEED_CONFIG = {
-  businesses: 50,
-  queuesPerBusiness: 5,
-  customersPerQueue: 200, // Total ~50k customers
+  businesses: 5,
+  queuesPerBusiness: 3,
+  customersPerQueue: 100, 
 };
 
 async function seed() {
@@ -15,21 +16,32 @@ async function seed() {
     console.log('Connecting to MongoDB...');
     await mongoose.connect(process.env.MONGO_URI);
     
-    console.log('Clearing existing data (Queues and Customers)...');
+    console.log('Clearing existing data (Businesses, Queues, and Customers)...');
+    await Business.deleteMany({});
     await Queue.deleteMany({});
     await Customer.deleteMany({});
 
-    const statuses = ['waiting', 'serving', 'completed', 'skipped'];
-    const queues = [];
+    // 1. Create a Default Test Business
+    const testBusiness = new Business({
+      name: 'Test Business',
+      email: 'test@waitless.com',
+      password: 'password123',
+      phone: '1234567890',
+      address: '123 AI Street, Tech City'
+    });
+    await testBusiness.save();
+    console.log('✅ Created Test Business: test@waitless.com / password123');
 
-    console.log(`Generating ${SEED_CONFIG.businesses * SEED_CONFIG.queuesPerBusiness} queues...`);
-    
-    // Using fixed business IDs for testing, including your provided one
-    const businessIds = ['69d3d5b4db69c7461b67c3b6']; 
+    const businessIds = [testBusiness._id.toString()];
     for(let i=1; i < SEED_CONFIG.businesses; i++) {
         businessIds.push(new mongoose.Types.ObjectId().toString());
     }
 
+    const statuses = ['waiting', 'serving', 'completed', 'skipped'];
+    const queues = [];
+
+    console.log(`Generating queues...`);
+    
     for (const bId of businessIds) {
       for (let i = 0; i < SEED_CONFIG.queuesPerBusiness; i++) {
         queues.push({
@@ -46,9 +58,9 @@ async function seed() {
     const createdQueues = await Queue.insertMany(queues);
     console.log(`Created ${createdQueues.length} queues.`);
 
-    console.log(`Generating approximately ${createdQueues.length * SEED_CONFIG.customersPerQueue} customers...`);
+    console.log(`Generating customers...`);
     
-    const batchSize = 1000;
+    const batchSize = 500;
     let customersBatch = [];
     let totalCreated = 0;
 
