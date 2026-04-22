@@ -16,11 +16,12 @@ services:
     build: ./server
     deploy:
       replicas: 3
+    env_file:
+      - ./server/.env
     environment:
+      # These override .env for internal docker networking
       MONGO_URI: mongodb://mongodb:27017/waitless
       REDIS_URL: redis://redis:6379
-      CLIENT_URL: http://localhost
-      JWT_SECRET: your_jwt_secret_here
       PORT: 5000
     depends_on:
       - mongodb
@@ -37,6 +38,8 @@ services:
     build: ./server
     container_name: waitless-worker
     command: node worker.js
+    env_file:
+      - ./server/.env
     environment:
       MONGO_URI: mongodb://mongodb:27017/waitless
       REDIS_URL: redis://redis:6379
